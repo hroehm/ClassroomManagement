@@ -338,10 +338,11 @@
 
             fetch(POWER_AUTOMATE_WEBHOOK_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ fileName: fileName, fileContent: csv })
-            }).then(res => {
-                console.log('SharePoint Webhook Sync Executed successfully');
+            }).then(() => {
+                console.log('SharePoint Webhook Sync sent successfully');
             }).catch(err => {
                 console.error('SharePoint Webhook Sync Error:', err);
             });
