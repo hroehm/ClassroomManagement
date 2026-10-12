@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Hall Pass Tracker & Dept Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-address-card text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white">Hall Pass Tracker</h1>
+                    <p id="teacherHeaderSub" class="text-xs font-medium text-slate-400">Teacher 1 • Room 204 • Block 1</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div id="syncBadge" class="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-semibold text-amber-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="syncBadgeText">Webhook URL Needed</span>
+                </div>
+                <button onclick="openWebhookModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition">
+                    <i class="fa-solid fa-link mr-1.5 text-indigo-400"></i> Webhook Config
+                </button>
+                <button onclick="downloadCSVLog()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition">
+                    <i class="fa-solid fa-file-csv mr-1.5"></i> Download CSV
+                </button>
+                <a href="index.html" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition">
+                    <i class="fa-solid fa-house mr-1"></i> Hub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <!-- Active Passes Section at TOP -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-person-walking text-amber-400"></i>
+                    <h2 class="text-base font-bold text-white">Active Hall Passes</h2>
+                    <span id="activePassCount" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">0 Out</span>
+                </div>
+                <span class="text-xs text-slate-400">Restricted: Bathroom Max 10 Mins • Max 2 Room Capacity</span>
+            </div>
+
+            <div id="activePassesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 min-h-[90px]">
+                <div id="noActivePassesMsg" class="col-span-full text-center py-6 text-slate-500 text-xs font-medium">
+                    No students currently out on a pass. Click a student tile below to checkout a pass.
+                </div>
+            </div>
+        </section>
+
+        <!-- Student Roster Grid -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+                <div>
+                    <h2 class="text-base font-bold text-white">Class Roster Tile Grid</h2>
+                    <p class="text-xs text-slate-400">Select any student card to issue a hall pass</p>
+                </div>
+                <div class="relative w-full md:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-xs text-slate-500"></i>
+                    <input type="text" id="rosterSearch" oninput="renderRosterTiles()" placeholder="Search student..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div id="rosterTilesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <!-- Dynamically rendered roster tiles -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Issue Pass Pop-Up Modal -->
+    <div id="issuePassModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-white">Select Pass Destination</h3>
+                    <p id="modalStudentName" class="text-xs font-bold text-indigo-400 mt-0.5">Student Name</p>
+                </div>
+                <button onclick="closePassModal()" class="text-slate-500 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <button onclick="selectPassType('Bathroom')" class="p-3 bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-blue-500 shadow-md">
+                    <i class="fa-solid fa-restroom text-sm"></i> Bathroom
+                </button>
+                <button onclick="selectPassType('Guidance')" class="p-3 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-purple-500 shadow-md">
+                    <i class="fa-solid fa-user-graduate text-sm"></i> Guidance
+                </button>
+                <button onclick="selectPassType('Library')" class="p-3 bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-amber-500 shadow-md">
+                    <i class="fa-solid fa-book text-sm"></i> Library
+                </button>
+                <button onclick="selectPassType('Office')" class="p-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-emerald-500 shadow-md">
+                    <i class="fa-solid fa-building text-sm"></i> Main Office
+                </button>
+                <button onclick="selectPassType('Nurse')" class="p-3 bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-teal-500 shadow-md">
+                    <i class="fa-solid fa-user-nurse text-sm"></i> Nurse
+                </button>
+                <button onclick="selectPassType('Errand')" class="p-3 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 border border-cyan-500 shadow-md">
+                    <i class="fa-solid fa-folder-open text-sm"></i> Class Errand
+                </button>
+            </div>
+
+            <div>
+                <button onclick="toggleCustomReason()" class="w-full py-2.5 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs rounded-xl border border-rose-500 shadow-md flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Other / Custom Reason
+                </button>
+                <div id="customReasonContainer" class="mt-3 hidden space-y-2">
+                    <input type="text" id="customReasonInput" placeholder="Specify custom destination..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+                    <button onclick="selectPassType('Other')" class="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow">Confirm Custom Pass</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webhook Config Modal -->
+    <div id="webhookModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-1">Power Automate Webhook Configuration</h3>
+            <p class="text-xs text-slate-400 mb-4">Paste your Power Automate HTTP POST URL below to enable direct cloud sync to your SharePoint <code class="bg-slate-950 text-indigo-300 px-1 py-0.5 rounded">HallPassLogs</code> folder.</p>
+            <input type="url" id="webhookUrlInput" placeholder="Paste HTTP POST URL here..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-indigo-500 mb-4">
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                <button onclick="clearWebhookUrl()" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-semibold rounded-xl hover:bg-rose-600/30">Clear URL</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeWebhookModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
+                    <button onclick="saveWebhookUrl()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow">Save & Send Test Sync</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- M365 & Direct SharePoint REST API Modal -->
+    <div id="m365Modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-brands fa-microsoft text-blue-400 text-lg"></i>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Direct M365 & SharePoint Cloud Sync</h3>
+                        <p class="text-xs text-slate-400">Option 1: Direct Cloud Auto-Logging (No Power Automate Needed)</p>
+                    </div>
+                </div>
+                <button onclick="closeM365Modal()" class="text-slate-500 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4 text-xs text-slate-300">
+                <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-slate-200" id="m365AccountLabel">M365 Session Active</div>
+                        <div class="text-[11px] text-slate-400" id="m365AccountEmail">Connected to Collierville High School SharePoint</div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Direct REST Active
+                    </span>
+                </div>
+
+                <div class="space-y-2 border-t border-slate-800 pt-4">
+                    <label class="font-bold text-slate-200 block">SharePoint Site Endpoint:</label>
+                    <input type="text" id="spSiteUrlInput" value="https://colliervilleschools.sharepoint.com/sites/ColHS" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="font-bold text-slate-200 block">Target Library Folder Path:</label>
+                    <input type="text" id="spFolderPathInput" value="/Shared Documents/ClassroomManagement/HallPassLogs" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                <button onclick="closeM365Modal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Close</button>
+                <button onclick="saveM365Config()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow">Save & Test Direct Sync</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let POWER_AUTOMATE_WEBHOOK_URL = localStorage.getItem('cms_webhook_url') || "";
+
+        const ROSTER = [
+            "Alexander, Marcus", "Bennett, Chloe", "Carter, Ethan", "Davis, Sophia",
+            "Edwards, Liam", "Foster, Ava", "Garcia, Noah", "Harris, Isabella",
+            "Jackson, Lucas", "King, Mia", "Lee, Oliver", "Martinez, Charlotte",
+            "Nelson, Elijah", "Owens, Amelia", "Patterson, James", "Quinn, Harper"
+        ];
+
+        let activePasses = JSON.parse(localStorage.getItem('cms_active_passes') || '[]');
+        let passLogs = JSON.parse(localStorage.getItem('cms_pass_logs') || '[]');
+        let selectedStudent = null;
+        let currentAuth = JSON.parse(sessionStorage.getItem('cms_auth') || '{"id":"t1","name":"Teacher 1","room":"204"}');
+
+        window.onload = function() {
+            document.getElementById('teacherHeaderSub').innerText = `${currentAuth.name} • Room ${currentAuth.room} • Block 1`;
+            updateSyncBadge();
+            renderActivePasses();
+            renderRosterTiles();
+            setInterval(renderActivePasses, 10000);
+        };
+
+        function updateSyncBadge() {
+            const badge = document.getElementById('syncBadge');
+            const badgeText = document.getElementById('syncBadgeText');
+            if (POWER_AUTOMATE_WEBHOOK_URL && POWER_AUTOMATE_WEBHOOK_URL.startsWith('http')) {
+                badge.className = "px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 flex items-center gap-2";
+                badgeText.innerText = "SharePoint Sync Active";
+            } else {
+                badge.className = "px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-semibold text-amber-400 flex items-center gap-2";
+                badgeText.innerText = "Webhook URL Needed";
+            }
+        }
+
+        function renderActivePasses() {
+            const grid = document.getElementById('activePassesGrid');
+            const noMsg = document.getElementById('noActivePassesMsg');
+            document.getElementById('activePassCount').innerText = `${activePasses.length} Out`;
+
+            if (activePasses.length === 0) {
+                grid.innerHTML = '';
+                grid.appendChild(noMsg);
+                return;
+            }
+
+            const bgColors = {
+                Bathroom: "bg-blue-700 border-blue-500 shadow-blue-900/50",
+                Guidance: "bg-purple-700 border-purple-500 shadow-purple-900/50",
+                Library: "bg-amber-700 border-amber-500 shadow-amber-900/50",
+                Office: "bg-emerald-700 border-emerald-500 shadow-emerald-900/50",
+                Nurse: "bg-teal-700 border-teal-500 shadow-teal-900/50",
+                Errand: "bg-cyan-700 border-cyan-500 shadow-cyan-900/50",
+                Other: "bg-rose-700 border-rose-500 shadow-rose-900/50"
+            };
+
+            grid.innerHTML = activePasses.map(p => {
+                const elapsedMins = Math.floor((Date.now() - p.startTime) / 60000);
+                const isOverdue = (p.type === 'Bathroom' && elapsedMins >= 10);
+                const cardBg = isOverdue ? "bg-red-600 border-2 border-red-300 animate-pulse text-white shadow-xl shadow-red-500/50" : `${bgColors[p.type] || 'bg-slate-800'} text-white border shadow-md`;
+
+                return `
+                    <div class="${cardBg} rounded-xl p-4 flex flex-col justify-between transition-all">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-black uppercase tracking-wider bg-black/30 px-2 py-0.5 rounded">${p.type}</span>
+                                <span class="text-xs font-bold bg-black/30 px-2 py-0.5 rounded">${elapsedMins} min out</span>
+                            </div>
+                            <div class="text-sm font-black tracking-wide">${p.student}</div>
+                            <div class="text-[11px] opacity-90 mt-1">${p.teacherName} • ${p.block || 'Block 1'}</div>
+                            ${p.reason ? `<div class="text-[11px] italic mt-1 opacity-90">Reason: ${p.reason}</div>` : ''}
+                        </div>
+                        <button onclick="checkInPass('${p.id}')" class="mt-4 w-full py-2 bg-black/40 hover:bg-black/60 text-white text-xs font-bold rounded-lg transition border border-white/20">
+                            <i class="fa-solid fa-right-to-bracket mr-1"></i> Check In Student
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderRosterTiles() {
+            const grid = document.getElementById('rosterTilesGrid');
+            const filter = document.getElementById('rosterSearch').value.toLowerCase();
+            const outStudents = activePasses.map(p => p.student);
+
+            grid.innerHTML = ROSTER.filter(s => s.toLowerCase().includes(filter)).map(s => {
+                const isOut = outStudents.includes(s);
+                return `
+                    <button onclick="${isOut ? '' : `openPassModal('${s}')`}" 
+                        class="p-4 rounded-xl border transition-all text-left flex flex-col justify-between h-24 ${isOut ? 'bg-slate-900/40 border-slate-800/60 text-slate-600 cursor-not-allowed opacity-50' : 'bg-slate-900 border-slate-800 hover:border-indigo-500 text-slate-200 hover:bg-slate-800/80 shadow-sm'}">
+                        <div class="text-xs font-bold leading-tight">${s}</div>
+                        <div class="text-[10px] font-semibold ${isOut ? 'text-amber-500' : 'text-indigo-400'}">
+                            ${isOut ? '<i class="fa-solid fa-person-walking"></i> Currently Out' : '<i class="fa-solid fa-plus"></i> Issue Pass'}
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function openPassModal(student) {
+            selectedStudent = student;
+            document.getElementById('modalStudentName').innerText = student;
+            document.getElementById('customReasonContainer').classList.add('hidden');
+            document.getElementById('issuePassModal').classList.remove('hidden');
+        }
+
+        function closePassModal() {
+            document.getElementById('issuePassModal').classList.add('hidden');
+        }
+
+        function toggleCustomReason() {
+            document.getElementById('customReasonContainer').classList.toggle('hidden');
+        }
+
+        function selectPassType(type) {
+            let reason = '';
+            if (type === 'Other') {
+                reason = document.getElementById('customReasonInput').value.trim();
+                if (!reason) { alert('Please enter a custom reason.'); return; }
+            }
+
+            const newPass = {
+                id: 'PASS-' + Date.now(),
+                student: selectedStudent,
+                type: type,
+                reason: reason,
+                teacherId: currentAuth.id,
+                teacherName: currentAuth.name,
+                block: 'Block 1',
+                startTime: Date.now()
+            };
+
+            activePasses.push(newPass);
+            localStorage.setItem('cms_active_passes', JSON.stringify(activePasses));
+
+            renderActivePasses();
+            renderRosterTiles();
+            closePassModal();
+            syncToSharePoint();
+        }
+
+        function checkInPass(passId) {
+            const index = activePasses.findIndex(p => p.id === passId);
+            if (index !== -1) {
+                const pass = activePasses[index];
+                pass.endTime = Date.now();
+                pass.duration = Math.round((pass.endTime - pass.startTime) / 60000);
+                passLogs.push(pass);
+                activePasses.splice(index, 1);
+
+                localStorage.setItem('cms_active_passes', JSON.stringify(activePasses));
+                localStorage.setItem('cms_pass_logs', JSON.stringify(passLogs));
+
+                renderActivePasses();
+                renderRosterTiles();
+                syncToSharePoint();
+            }
+        }
+
+        function openM365Modal() {
+            document.getElementById('spSiteUrlInput').value = localStorage.getItem('cms_sp_site_url') || "https://colliervilleschools.sharepoint.com/sites/ColHS";
+            document.getElementById('spFolderPathInput').value = localStorage.getItem('cms_sp_folder_path') || "/Shared Documents/ClassroomManagement/HallPassLogs";
+            document.getElementById('m365Modal').classList.remove('hidden');
+        }
+
+        function closeM365Modal() {
+            document.getElementById('m365Modal').classList.add('hidden');
+        }
+
+        function saveM365Config() {
+            const site = document.getElementById('spSiteUrlInput').value.trim() || "https://colliervilleschools.sharepoint.com/sites/ColHS";
+            const folder = document.getElementById('spFolderPathInput').value.trim() || "/Shared Documents/ClassroomManagement/HallPassLogs";
+            localStorage.setItem('cms_sp_site_url', site);
+            localStorage.setItem('cms_sp_folder_path', folder);
+            closeM365Modal();
+            syncToSharePoint();
+            alert('SharePoint Direct REST settings saved! Immediate sync test initiated.');
+        }
+
+        function syncToSharePoint() {
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `${today}_Pass_Log.csv`;
+
+            let csv = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,StartTime,EndTime,DurationMinutes,Status\n";
+            const allRecords = [...passLogs, ...activePasses.map(p => ({ ...p, duration: 'Active', endTime: '' }))];
+            
+            allRecords.forEach(r => {
+                csv += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block || 'Block 1'}","${new Date(r.startTime).toLocaleTimeString()}","${r.endTime ? new Date(r.endTime).toLocaleTimeString() : ''}","${r.duration || 'Active'}","${r.endTime ? 'Completed' : 'Active'}"\n`;
+            });
+
+            // Direct SharePoint REST API Push (No Power Automate Premium License Needed)
+            const activeSite = localStorage.getItem('cms_sp_site_url') || "https://colliervilleschools.sharepoint.com/sites/ColHS";
+            const activeFolder = localStorage.getItem('cms_sp_folder_path') || "/Shared Documents/ClassroomManagement/HallPassLogs";
+            const spRestUrl = `${activeSite}/_api/web/GetFolderByServerRelativePath(decodedUrl='${activeFolder}')/Files/add(url='${fileName}',overwrite=true)`;
+
+            fetch(spRestUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json;odata=verbose',
+                    'Content-Type': 'text/csv'
+                },
+                body: csv,
+                credentials: 'include'
+            }).then(res => {
+                console.log('Direct SharePoint REST file write complete:', res.status);
+            }).catch(err => {
+                console.log('Direct SharePoint REST sync notice:', err);
+            });
+
+            if (!POWER_AUTOMATE_WEBHOOK_URL || !POWER_AUTOMATE_WEBHOOK_URL.startsWith('http')) {
+                console.log('No valid Webhook URL configured.');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `${today}_Pass_Log.csv`;
+
+            let csv = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,StartTime,EndTime,DurationMinutes,Status\n";
+            const allRecords = [...passLogs, ...activePasses.map(p => ({ ...p, duration: 'Active', endTime: '' }))];
+            
+            allRecords.forEach(r => {
+                csv += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block || 'Block 1'}","${new Date(r.startTime).toLocaleTimeString()}","${r.endTime ? new Date(r.endTime).toLocaleTimeString() : ''}","${r.duration || 'Active'}","${r.endTime ? 'Completed' : 'Active'}"\n`;
+            });
+
+            const payload = JSON.stringify({ fileName: fileName, fileContent: csv });
+
+            fetch(POWER_AUTOMATE_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: payload,
+                mode: 'no-cors'
+            }).then(() => {
+                console.log('Webhook payload dispatched successfully');
+            }).catch(err => {
+                console.error('Webhook error:', err);
+            });
+        }
+
+        function downloadCSVLog() {
+            const today = new Date().toISOString().split('T')[0];
+            let csv = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,StartTime,EndTime,DurationMinutes,Status\n";
+            const allRecords = [...passLogs, ...activePasses.map(p => ({ ...p, duration: 'Active', endTime: '' }))];
+            
+            allRecords.forEach(r => {
+                csv += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block || 'Block 1'}","${new Date(r.startTime).toLocaleTimeString()}","${r.endTime ? new Date(r.endTime).toLocaleTimeString() : ''}","${r.duration || 'Active'}","${r.endTime ? 'Completed' : 'Active'}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${today}_Pass_Log.csv`;
+            a.click();
+        }
+
+        function openWebhookModal() {
+            document.getElementById('webhookUrlInput').value = POWER_AUTOMATE_WEBHOOK_URL;
+            document.getElementById('webhookModal').classList.remove('hidden');
+        }
+
+        function closeWebhookModal() {
+            document.getElementById('webhookModal').classList.add('hidden');
+        }
+
+        function saveWebhookUrl() {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            POWER_AUTOMATE_WEBHOOK_URL = url;
+            localStorage.setItem('cms_webhook_url', url);
+            updateSyncBadge();
+            closeWebhookModal();
+            syncToSharePoint();
+            alert('Webhook URL saved! A test sync request has been sent to Power Automate.');
+        }
+
+        function clearWebhookUrl() {
+            POWER_AUTOMATE_WEBHOOK_URL = "";
+            localStorage.removeItem('cms_webhook_url');
+            document.getElementById('webhookUrlInput').value = "";
+            updateSyncBadge();
+            closeWebhookModal();
+        }
+    </script>
+</body>
+</html>

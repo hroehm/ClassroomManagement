@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Job Wheel Spinner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center font-sans p-6">
+    <div class="max-w-xl w-full text-center space-y-6">
+        <h1 class="text-xl font-bold text-emerald-400 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-dharmachakra text-2xl"></i> Dual Concentric Job Wheel
+        </h1>
+        <div class="relative flex items-center justify-center">
+            <canvas id="wheelCanvas" width="400" height="400" class="rounded-full border-4 border-slate-800 shadow-2xl bg-slate-900"></canvas>
+            <div class="absolute top-2 text-rose-500 text-3xl font-black"><i class="fa-solid fa-caret-down"></i></div>
+        </div>
+        <button onclick="spinWheel()" class="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition">
+            Spin Dual Wheel
+        </button>
+        <div id="resultCard" class="hidden bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl text-emerald-300 font-bold text-sm">
+            Match Result
+        </div>
+    </div>
+    <script>
+        const STUDENTS = ["Marcus A.", "Chloe B.", "Ethan C.", "Sophia D.", "Liam E.", "Ava F.", "Noah G.", "Isabella H."];
+        const JOBS = ["Paper Pass", "Board Clean", "Line Lead", "Tech Helper", "Door Holder", "Time Keeper", "Supply Mgr", "Greeter"];
+        const COLORS = ["#2563eb", "#7e22ce", "#b45309", "#047857", "#0f766e", "#0e7490", "#be123c", "#4d7c0f"];
+
+        let angleStudent = 0, angleJob = 0;
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawWheel() {
+            ctx.clearRect(0,0,400,400);
+            const center = 200;
+            
+            // Outer Wheel (Students)
+            const arcS = (2 * Math.PI) / STUDENTS.length;
+            STUDENTS.forEach((s, i) => {
+                const a = angleStudent + i * arcS;
+                ctx.beginPath(); ctx.fillStyle = COLORS[i % COLORS.length];
+                ctx.moveTo(center, center); ctx.arc(center, center, 190, a, a + arcS); ctx.fill();
+                ctx.save(); ctx.translate(center, center); ctx.rotate(a + arcS/2);
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(s, 90, 4);
+                ctx.restore();
+            });
+
+            // Inner Wheel (Jobs)
+            const arcJ = (2 * Math.PI) / JOBS.length;
+            JOBS.forEach((j, i) => {
+                const a = angleJob + i * arcJ;
+                ctx.beginPath(); ctx.fillStyle = COLORS[(i+3) % COLORS.length];
+                ctx.moveTo(center, center); ctx.arc(center, center, 95, a, a + arcJ); ctx.fill();
+                ctx.save(); ctx.translate(center, center); ctx.rotate(a + arcJ/2);
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px sans-serif'; ctx.fillText(j, 35, 4);
+                ctx.restore();
+            });
+
+            // Center Pin
+            ctx.beginPath(); ctx.arc(center, center, 20, 0, 2*Math.PI); ctx.fillStyle = '#0f172a'; ctx.fill();
+        }
+
+        function spinWheel() {
+            let speedS = 0.3 + Math.random() * 0.2;
+            let speedJ = - (0.3 + Math.random() * 0.2);
+            let duration = 3000;
+            let start = Date.now();
+
+            const timer = setInterval(() => {
+                const elapsed = Date.now() - start;
+                if (elapsed < duration) {
+                    angleStudent += speedS; angleJob += speedJ;
+                    speedS *= 0.98; speedJ *= 0.98;
+                    drawWheel();
+                } else {
+                    clearInterval(timer);
+                    const sIdx = Math.floor((2*Math.PI - (angleStudent % (2*Math.PI))) / ((2*Math.PI)/STUDENTS.length)) % STUDENTS.length;
+                    const jIdx = Math.floor((2*Math.PI - (angleJob % (2*Math.PI))) / ((2*Math.PI)/JOBS.length)) % JOBS.length;
+                    document.getElementById('resultCard').innerText = `Matched: ${STUDENTS[sIdx]} ➔ ${JOBS[jIdx]}`;
+                    document.getElementById('resultCard').classList.remove('hidden');
+                }
+            }, 30);
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
