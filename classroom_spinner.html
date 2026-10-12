@@ -3,179 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Job Spinner - Collierville High School</title>
+    <title>Classroom Job Wheel Spinner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://chnis.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%); }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="gradient-bg min-h-screen text-slate-100 font-sans antialiased pb-12">
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <a href="index.html" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                <a href="index.html" class="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-arrow-left"></i>
                 </a>
-                <div class="bg-emerald-600 p-2.5 rounded-xl shadow-lg shadow-emerald-500/30">
-                    <i class="fa-solid fa-dharmachakra text-xl text-white"></i>
+                <div class="bg-gradient-to-tr from-amber-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-dharmachakra text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-white leading-tight">Classroom Job Spinner</h1>
-                    <p class="text-xs text-emerald-400 font-medium">Dual Concentric Wheel Pairing</p>
+                    <h1 class="font-bold text-base text-white leading-tight">Job Wheel Spinner</h1>
+                    <p class="text-[11px] text-amber-400 font-medium">Math Department &bull; M365 Integration</p>
                 </div>
             </div>
 
-            <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200" id="userDisplayChip">
-                Teacher 1 (Room 101)
+            <div class="flex items-center space-x-3">
+                <select id="spinnerBlockSelect" onchange="changeSpinnerBlock(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-500">
+                    <option value="Block 1">Block 1</option>
+                    <option value="Block 2">Block 2</option>
+                    <option value="Block 3">Block 3</option>
+                    <option value="Block 4">Block 4</option>
+                    <option value="Block 5">Block 5</option>
+                </select>
+
+                <div id="userBadge" class="bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-semibold text-slate-300">
+                    Teacher 1
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6 flex flex-col items-center">
-        <!-- Canvas Wheel Area -->
-        <div class="glass-card rounded-2xl p-6 shadow-2xl flex flex-col items-center space-y-6 w-full max-w-2xl">
-            <div class="relative flex items-center justify-center">
-                <!-- Pointer Marker -->
-                <div class="absolute -top-3 text-rose-500 text-3xl z-20 drop-shadow">
-                    <i class="fa-solid fa-caret-down"></i>
-                </div>
-                <canvas id="wheelCanvas" width="450" height="450" class="max-w-full rounded-full border-4 border-emerald-500/40 shadow-2xl bg-slate-900"></canvas>
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center justify-center space-y-6">
+
+        <div class="text-center space-y-1">
+            <h2 class="text-2xl font-extrabold text-white">Dual Concentric Job Spinner</h2>
+            <p class="text-xs text-slate-400">Outer Ring: Students &bull; Inner Ring: Classroom Jobs</p>
+        </div>
+
+        <!-- Wheel Canvas Container -->
+        <div class="relative w-[360px] h-[360px] md:w-[440px] md:h-[440px] flex items-center justify-center">
+            <!-- Pointer Arrow -->
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-amber-400 text-3xl filter drop-shadow-md">
+                <i class="fa-solid fa-location-pin"></i>
             </div>
+            <canvas id="wheelCanvas" width="440" height="440" class="rounded-full shadow-2xl border-4 border-slate-800"></canvas>
+        </div>
 
-            <!-- Spin Controls -->
-            <button onclick="spinWheel()" id="spinBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-base px-8 py-3.5 rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center space-x-2">
-                <i class="fa-solid fa-arrows-spin"></i>
-                <span>SPIN WHEEL</span>
-            </button>
+        <!-- Spin Controls -->
+        <button onclick="spinWheel()" id="spinBtn" class="bg-amber-600 hover:bg-amber-500 text-white font-black px-10 py-4 rounded-2xl text-base transition shadow-xl shadow-amber-600/30 flex items-center gap-2">
+            <i class="fa-solid fa-rotate text-lg"></i>
+            <span>Spin Job Wheel</span>
+        </button>
 
-            <!-- Result Box -->
-            <div id="resultCard" class="hidden text-center p-4 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl w-full">
-                <div class="text-xs text-emerald-300 font-bold uppercase tracking-wider">Matched Result</div>
-                <div id="resultText" class="text-lg font-bold text-white mt-1">Alex Miller &bull; Lead Facilitator</div>
+        <!-- Result Modal -->
+        <div id="resultModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+                <div class="w-14 h-14 bg-amber-600/20 text-amber-400 rounded-2xl border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Pairing Selected!</h3>
+                <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 space-y-2">
+                    <div id="resStudent" class="text-lg font-bold text-amber-300">Student A</div>
+                    <div class="text-xs text-slate-400 uppercase font-bold tracking-wider">&bull; Assigned Job &bull;</div>
+                    <div id="resJob" class="text-base font-extrabold text-white">Lead Facilitator</div>
+                </div>
+                <button onclick="closeResultModal()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl text-xs transition">
+                    Awesome!
+                </button>
             </div>
         </div>
+
     </main>
 
     <script>
-        const students = ["Alex Miller", "Jordan Smith", "Taylor Johnson", "Morgan Davis", "Casey Brown", "Riley Wilson"];
-        const jobs = ["Lead Facilitator", "Lead Researcher", "Recorder / Reporter", "Materials Manager", "Timekeeper", "Tech Specialist"];
+        const ROSTERS = {
+            'Block 1': ['Student A', 'Student B', 'Student C', 'Student D', 'Student E', 'Student F', 'Student G', 'Student H'],
+            'Block 2': ['Student I', 'Student J', 'Student K', 'Student L', 'Student M', 'Student N', 'Student O', 'Student P'],
+            'Block 3': ['Student Q', 'Student R', 'Student S', 'Student T', 'Student U', 'Student V'],
+            'Block 4': ['Student W', 'Student X', 'Student Y', 'Student Z', 'Student AA', 'Student BB'],
+            'Block 5': ['Planning Block']
+        };
 
-        const colors = ["#059669", "#2563eb", "#9333ea", "#d97706", "#0891b2", "#e11d48"];
+        const JOBS = ['Lead Facilitator', 'Lead Researcher', 'Recorder / Reporter', 'Materials Manager', 'Tech Specialist', 'Time Keeper'];
+        const COLORS = ['#2563eb', '#7e22ce', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#ca8a04'];
 
+        let currentBlock = 'Block 1';
         let currentAngle = 0;
         let isSpinning = false;
 
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = sessionStorage.getItem('cms_user');
+            if (saved) {
+                const u = JSON.parse(saved);
+                document.getElementById('userBadge').textContent = `${u.name} (${u.room})`;
+            }
+            drawWheel();
+        });
+
+        function changeSpinnerBlock(block) {
+            currentBlock = block;
+            drawWheel();
+        }
+
         function drawWheel() {
-            const canvas = document.getElementById("wheelCanvas");
-            const ctx = canvas.getContext("2d");
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const outerR = 210;
-            const innerR = 120;
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const students = ROSTERS[currentBlock] || ['No Students'];
+            const numSegments = students.length;
+            const arc = (2 * Math.PI) / numSegments;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(220, 220);
+            ctx.rotate(currentAngle);
 
             // Outer Wheel (Students)
-            const numStudents = students.length;
-            const arcOuter = (2 * Math.PI) / numStudents;
-
-            for (let i = 0; i < numStudents; i++) {
-                const angle = currentAngle + i * arcOuter;
+            for (let i = 0; i < numSegments; i++) {
+                const angle = i * arc;
                 ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(cx, cy);
-                ctx.arc(cx, cy, outerR, angle, angle + arcOuter);
+                ctx.fillStyle = COLORS[i % COLORS.length];
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 210, angle, angle + arc);
+                ctx.lineTo(0, 0);
                 ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
 
                 // Draw Text
                 ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(angle + arcOuter / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 12px sans-serif";
-                ctx.fillText(students[i], outerR - 15, 4);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Inter';
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = 'right';
+                ctx.fillText(students[i], 190, 4);
                 ctx.restore();
             }
 
             // Inner Wheel (Jobs)
-            const numJobs = jobs.length;
-            const arcInner = (2 * Math.PI) / numJobs;
-
-            for (let i = 0; i < numJobs; i++) {
-                const angle = -currentAngle + i * arcInner;
+            const innerArc = (2 * Math.PI) / JOBS.length;
+            for (let j = 0; j < JOBS.length; j++) {
+                const jAngle = j * innerArc;
                 ctx.beginPath();
-                ctx.fillStyle = colors[(i + 2) % colors.length];
-                ctx.moveTo(cx, cy);
-                ctx.arc(cx, cy, innerR, angle, angle + arcInner);
+                ctx.fillStyle = COLORS[(j + 3) % COLORS.length];
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 110, jAngle, jAngle + innerArc);
+                ctx.lineTo(0, 0);
                 ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
 
                 ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(angle + arcInner / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 10px sans-serif";
-                ctx.fillText(jobs[i], innerR - 10, 4);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Inter';
+                ctx.rotate(jAngle + innerArc / 2);
+                ctx.textAlign = 'right';
+                ctx.fillText(JOBS[j], 100, 3);
                 ctx.restore();
             }
 
-            // Center Ring
+            // Center Hub
             ctx.beginPath();
-            ctx.fillStyle = "#0f172a";
-            ctx.arc(cx, cy, 35, 0, 2 * Math.PI);
+            ctx.fillStyle = '#0f172a';
+            ctx.arc(0, 0, 35, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.strokeStyle = "#10b981";
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            ctx.restore();
         }
 
         function spinWheel() {
             if (isSpinning) return;
             isSpinning = true;
-            document.getElementById("resultCard").classList.add("hidden");
 
-            const spinAngle = Math.PI * 8 + Math.random() * Math.PI * 4;
+            const spinAngle = Math.PI * 10 + Math.random() * Math.PI * 4;
             const duration = 4000;
             const start = performance.now();
 
             function animate(time) {
                 const elapsed = time - start;
-                if (elapsed < duration) {
-                    const progress = elapsed / duration;
-                    const easeOut = 1 - Math.pow(1 - progress, 3);
-                    currentAngle = spinAngle * easeOut;
-                    drawWheel();
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+
+                currentAngle = spinAngle * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
                     isSpinning = false;
-                    currentAngle = spinAngle % (2 * Math.PI);
-                    drawWheel();
                     showResult();
                 }
             }
-
             requestAnimationFrame(animate);
         }
 
         function showResult() {
-            const studentIdx = Math.floor(Math.random() * students.length);
-            const jobIdx = Math.floor(Math.random() * jobs.length);
+            const students = ROSTERS[currentBlock] || ['Student A'];
+            const randomStudent = students[Math.floor(Math.random() * students.length)];
+            const randomJob = JOBS[Math.floor(Math.random() * JOBS.length)];
 
-            document.getElementById("resultText").textContent = `${students[studentIdx]} • ${jobs[jobIdx]}`;
-            document.getElementById("resultCard").classList.remove("hidden");
+            document.getElementById('resStudent').textContent = randomStudent;
+            document.getElementById('resJob').textContent = randomJob;
+            document.getElementById('resultModal').classList.remove('hidden');
         }
 
-        window.onload = () => {
-            const saved = sessionStorage.getItem("cms_active_user");
-            if (saved) {
-                const user = JSON.parse(saved);
-                document.getElementById("userDisplayChip").textContent = `${user.name} (${user.room})`;
-            }
-            drawWheel();
-        };
+        function closeResultModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>

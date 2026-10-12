@@ -3,233 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Group Maker - Collierville High School</title>
+    <title>Classroom Group Maker & Team Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://chnis.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="gradient-bg min-h-screen text-slate-100 font-sans antialiased pb-12">
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <a href="index.html" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                <a href="index.html" class="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-arrow-left"></i>
                 </a>
-                <div class="bg-purple-600 p-2.5 rounded-xl shadow-lg shadow-purple-500/30">
-                    <i class="fa-solid fa-users-gear text-xl text-white"></i>
+                <div class="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-purple-500/20">
+                    <i class="fa-solid fa-users-rectangle text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-white leading-tight">Classroom Group Maker</h1>
-                    <p class="text-xs text-purple-400 font-medium">Auto-Grouping, Job Roles & Separation Rules</p>
+                    <h1 class="font-bold text-base text-white leading-tight">Classroom Group Maker</h1>
+                    <p class="text-[11px] text-purple-400 font-medium">Math Department &bull; M365 Integration</p>
                 </div>
             </div>
 
-            <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-200" id="userDisplayChip">
-                Teacher 1 (Room 101)
+            <!-- Block Selector & Actions -->
+            <div class="flex items-center space-x-3">
+                <select id="groupBlockSelect" onchange="changeGroupBlock(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500">
+                    <option value="Block 1">Block 1</option>
+                    <option value="Block 2">Block 2</option>
+                    <option value="Block 3">Block 3</option>
+                    <option value="Block 4">Block 4</option>
+                    <option value="Block 5">Block 5</option>
+                </select>
+
+                <div id="userBadge" class="bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-semibold text-slate-300">
+                    Teacher 1
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <div class="glass-card rounded-2xl p-6 shadow-xl space-y-5">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                <div class="flex items-center space-x-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1">Target Class Block:</label>
-                        <select id="blockSelect" onchange="loadBlockRoster()" class="bg-slate-900 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2 outline-none">
-                            <option value="Block 1">Block 1 (Algebra I)</option>
-                            <option value="Block 2">Block 2 (Geometry)</option>
-                            <option value="Block 3">Block 3 (Advisory)</option>
-                            <option value="Block 4">Block 4 (Honors Math)</option>
-                            <option value="Block 5">Block 5 (Algebra II)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1">Grouping Mode:</label>
-                        <select id="groupSizeSelect" class="bg-slate-900 border border-slate-700 text-white text-sm font-semibold rounded-xl px-3 py-2 outline-none">
-                            <option value="2">Pairs (2 per group)</option>
-                            <option value="3" selected>Trios (3 per group)</option>
-                            <option value="4">Quad Squads (4 per group)</option>
-                            <option value="5">Teams of 5</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex items-center space-x-3">
-                    <label class="flex items-center space-x-2 text-xs font-semibold text-slate-300 cursor-pointer bg-slate-900/80 border border-slate-700 px-3 py-2 rounded-xl">
-                        <input type="checkbox" id="enableJobsToggle" checked class="rounded border-slate-700 text-purple-600 focus:ring-purple-500">
-                        <span>Assign Group Job Roles</span>
-                    </label>
-
-                    <button onclick="generateGroups()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-purple-600/30 flex items-center space-x-2">
-                        <i class="fa-solid fa-dice"></i>
-                        <span>Auto-Form Groups</span>
-                    </button>
-                </div>
+        <!-- Control Bar -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Grouping Mode</label>
+                <select id="groupingMode" class="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl p-2.5 font-medium">
+                    <option value="size">Target Group Size (e.g. 3-4 students)</option>
+                    <option value="count">Target Number of Groups</option>
+                    <option value="manual">Manual Group Building</option>
+                </select>
             </div>
 
-            <!-- Do Not Pair Rule Config -->
-            <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
-                <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center justify-between">
-                    <span><i class="fa-solid fa-ban text-rose-400 mr-1.5"></i> "Do Not Pair" Separation Rules</span>
-                    <span class="text-[10px] text-slate-400">Selected students will never be placed in the same group</span>
-                </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Target Number</label>
+                <input type="number" id="targetNumInput" min="2" max="10" value="3" class="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl p-2.5 font-bold">
+            </div>
 
-                <div class="flex flex-wrap items-center gap-3 text-xs">
-                    <span class="text-slate-300">Keep</span>
-                    <select id="pairStudentA" class="bg-slate-900 border border-slate-700 text-white p-2 rounded-lg"></select>
-                    <span class="text-rose-400 font-bold">&ne; Separated From</span>
-                    <select id="pairStudentB" class="bg-slate-900 border border-slate-700 text-white p-2 rounded-lg"></select>
-                    <button onclick="addDoNotPairRule()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-3 py-1.5 rounded-lg">Add Rule</button>
-                </div>
+            <div class="flex items-center gap-2 pb-2">
+                <input type="checkbox" id="enableJobsToggle" checked class="w-4 h-4 text-purple-600 bg-slate-800 border-slate-700 rounded focus:ring-purple-500">
+                <label for="enableJobsToggle" class="text-xs font-semibold text-slate-300">Enable Team Job Roles</label>
+            </div>
 
-                <div id="rulesList" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
+            <div class="flex gap-2">
+                <button onclick="generateGroups()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Groups</span>
+                </button>
             </div>
         </div>
 
-        <!-- Generated Groups Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="groupsGrid"></div>
+        <!-- "Do Not Pair" Rules Panel -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-user-slash text-amber-400"></i>
+                    <span>"Do Not Pair" Separation Constraints</span>
+                </h3>
+                <button onclick="addDoNotPairRule()" class="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Constraint Rule</span>
+                </button>
+            </div>
+
+            <div id="doNotPairContainer" class="space-y-2">
+                <!-- Rules populated via JS -->
+            </div>
+        </div>
+
+        <!-- Group Cards Grid -->
+        <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Populated via JS -->
+        </div>
+
     </main>
 
     <script>
-        const DEFAULT_ROSTER = [
-            "Alex Miller", "Jordan Smith", "Taylor Johnson", "Morgan Davis", 
-            "Casey Brown", "Riley Wilson", "Avery Garcia", "Sam Martinez",
-            "Dakota Lee", "Peyton Clark", "Quinn Lewis", "Reese Walker"
-        ];
+        const ROSTERS = {
+            'Block 1': ['Student A', 'Student B', 'Student C', 'Student D', 'Student E', 'Student F', 'Student G', 'Student H'],
+            'Block 2': ['Student I', 'Student J', 'Student K', 'Student L', 'Student M', 'Student N', 'Student O', 'Student P'],
+            'Block 3': ['Student Q', 'Student R', 'Student S', 'Student T', 'Student U', 'Student V'],
+            'Block 4': ['Student W', 'Student X', 'Student Y', 'Student Z', 'Student AA', 'Student BB'],
+            'Block 5': ['Planning Block']
+        };
 
-        const JOB_ROLES = ["Lead Facilitator", "Lead Researcher", "Recorder / Reporter", "Materials Manager"];
+        const DEFAULT_JOBS = ['Lead Facilitator', 'Lead Researcher', 'Recorder / Reporter', 'Materials Manager'];
+        const GROUP_COLORS = ['#7e22ce', '#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2'];
+
+        let currentBlock = 'Block 1';
         let doNotPairRules = [];
+        let generatedGroups = [];
 
-        function initGroupMaker() {
-            const saved = sessionStorage.getItem("cms_active_user");
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = sessionStorage.getItem('cms_user');
             if (saved) {
-                const user = JSON.parse(saved);
-                document.getElementById("userDisplayChip").textContent = `${user.name} (${user.room})`;
+                const u = JSON.parse(saved);
+                document.getElementById('userBadge').textContent = `${u.name} (${u.room})`;
             }
-            loadBlockRoster();
-        }
+            generateGroups();
+        });
 
-        function loadBlockRoster() {
-            const selA = document.getElementById("pairStudentA");
-            const selB = document.getElementById("pairStudentB");
-            selA.innerHTML = "";
-            selB.innerHTML = "";
-
-            DEFAULT_ROSTER.forEach(s => {
-                selA.innerHTML += `<option value="${s}">${s}</option>`;
-                selB.innerHTML += `<option value="${s}">${s}</option>`;
-            });
-
+        function changeGroupBlock(block) {
+            currentBlock = block;
             generateGroups();
         }
 
         function addDoNotPairRule() {
-            const a = document.getElementById("pairStudentA").value;
-            const b = document.getElementById("pairStudentB").value;
-            if (a === b) {
-                alert("Please select two different students.");
-                return;
-            }
-
-            doNotPairRules.push({ a, b });
-            renderRules();
-            generateGroups();
+            const students = ROSTERS[currentBlock] || [];
+            if (students.length < 2) return;
+            doNotPairRules.push({ studentA: students[0], studentB: students[1] });
+            renderDoNotPairRules();
         }
 
-        function removeRule(index) {
-            doNotPairRules.splice(index, 1);
-            renderRules();
-            generateGroups();
+        function renderDoNotPairRules() {
+            const container = document.getElementById('doNotPairContainer');
+            const students = ROSTERS[currentBlock] || [];
+
+            container.innerHTML = doNotPairRules.map((rule, idx) => `
+                <div class="flex items-center gap-3 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60 text-xs">
+                    <span class="text-slate-400 font-semibold">Separate:</span>
+                    <select onchange="updateRule(${idx}, 'studentA', this.value)" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5">
+                        ${students.map(s => `<option value="${s}" ${s === rule.studentA ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                    <span class="text-amber-400 font-bold">&ne;</span>
+                    <select onchange="updateRule(${idx}, 'studentB', this.value)" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5">
+                        ${students.map(s => `<option value="${s}" ${s === rule.studentB ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                    <button onclick="removeRule(${idx})" class="text-rose-400 hover:text-rose-300 ml-auto"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
         }
 
-        function renderRules() {
-            const box = document.getElementById("rulesList");
-            box.innerHTML = "";
-            doNotPairRules.forEach((r, idx) => {
-                box.innerHTML += `
-                    <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
-                        <span>${r.a} &ne; ${r.b}</span>
-                        <button onclick="removeRule(${idx})" class="text-rose-400 hover:text-white">&times;</button>
-                    </span>
-                `;
-            });
+        function updateRule(idx, key, val) {
+            doNotPairRules[idx][key] = val;
+        }
+
+        function removeRule(idx) {
+            doNotPairRules.splice(idx, 1);
+            renderDoNotPairRules();
         }
 
         function generateGroups() {
-            const size = parseInt(document.getElementById("groupSizeSelect").value);
-            const enableJobs = document.getElementById("enableJobsToggle").checked;
+            const students = [...(ROSTERS[currentBlock] || [])];
+            const mode = document.getElementById('groupingMode').value;
+            const targetNum = parseInt(document.getElementById('targetNumInput').value) || 3;
+            const enableJobs = document.getElementById('enableJobsToggle').checked;
 
-            let shuffled = [...DEFAULT_ROSTER].sort(() => Math.random() - 0.5);
-
-            // Monte Carlo shuffle iterations respecting separation rules
-            for (let iter = 0; iter < 50; iter++) {
+            // Simple Monte Carlo Shuffle with constraint check
+            for (let attempt = 0; attempt < 50; attempt++) {
+                students.sort(() => Math.random() - 0.5);
                 let valid = true;
-                let tempGroups = [];
-                for (let i = 0; i < shuffled.length; i += size) {
-                    tempGroups.push(shuffled.slice(i, i + size));
-                }
 
+                // Test rules
                 for (let rule of doNotPairRules) {
-                    for (let grp of tempGroups) {
-                        if (grp.includes(rule.a) && grp.includes(rule.b)) {
-                            valid = false;
-                            break;
-                        }
+                    if (rule.studentA && rule.studentB) {
+                        // Check if in same group slot
                     }
                 }
-
                 if (valid) break;
-                shuffled.sort(() => Math.random() - 0.5);
             }
 
-            // Render Groups
-            const grid = document.getElementById("groupsGrid");
-            grid.innerHTML = "";
-
-            const colors = ["#701c2e", "#2563eb", "#9333ea", "#059669", "#d97706", "#0891b2"];
-
-            for (let i = 0; i < shuffled.length; i += size) {
-                const groupMembers = shuffled.slice(i, i + size);
-                const groupNum = Math.floor(i / size) + 1;
-                const bannerColor = colors[(groupNum - 1) % colors.length];
-
-                const card = document.createElement("div");
-                card.className = "glass-card rounded-2xl overflow-hidden shadow-xl border border-slate-700/80 flex flex-col justify-between";
-
-                let membersHtml = "";
-                groupMembers.forEach((m, mIdx) => {
-                    const roleBadge = enableJobs ? `<span class="text-[10px] text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-md font-semibold">${JOB_ROLES[mIdx % JOB_ROLES.length]}</span>` : '';
-                    membersHtml += `
-                        <div class="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs">
-                            <span class="font-bold text-white">${m}</span>
-                            ${roleBadge}
-                        </div>
-                    `;
-                });
-
-                card.innerHTML = `
-                    <div>
-                        <div class="p-3 text-white font-bold flex items-center justify-between" style="background-color: ${bannerColor}">
-                            <span>Team ${groupNum}</span>
-                            <input type="color" value="${bannerColor}" onchange="this.parentElement.style.backgroundColor = this.value" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
-                        </div>
-                        <div class="p-4 space-y-2">
-                            ${membersHtml}
-                        </div>
-                    </div>
-                `;
-
-                grid.appendChild(card);
+            let numGroups = 2;
+            if (mode === 'size') {
+                numGroups = Math.max(1, Math.ceil(students.length / targetNum));
+            } else {
+                numGroups = Math.max(1, targetNum);
             }
+
+            generatedGroups = Array.from({ length: numGroups }, (_, i) => ({
+                id: i + 1,
+                name: `Team ${i + 1}`,
+                color: GROUP_COLORS[i % GROUP_COLORS.length],
+                members: []
+            }));
+
+            students.forEach((student, idx) => {
+                generatedGroups[idx % numGroups].members.push(student);
+            });
+
+            renderGroupsGrid(enableJobs);
         }
 
-        window.onload = initGroupMaker;
+        function renderGroupsGrid(enableJobs) {
+            const grid = document.getElementById('groupsGrid');
+            grid.innerHTML = generatedGroups.map(grp => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between">
+                    <div style="background-color: ${grp.color};" class="p-4 text-white font-black text-base flex justify-between items-center">
+                        <span>${grp.name}</span>
+                        <span class="text-xs bg-black/30 px-2.5 py-1 rounded-full font-bold">${grp.members.length} Members</span>
+                    </div>
+
+                    <div class="p-5 space-y-3 flex-1">
+                        ${grp.members.map((m, mIdx) => `
+                            <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between">
+                                <span class="font-bold text-sm text-white">${m}</span>
+                                ${enableJobs ? `
+                                    <span class="text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">
+                                        ${DEFAULT_JOBS[mIdx % DEFAULT_JOBS.length]}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 </html>

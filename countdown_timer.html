@@ -3,132 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Timer - Collierville High School</title>
+    <title>Disruption-Free Countdown Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://chnis.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .timer-bg { background: linear-gradient(135deg, #0f172a 0%, #172554 100%); }
-        .digital-font { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 0.05em; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="timer-bg min-h-screen text-slate-100 flex flex-col justify-between p-6">
-    <header class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div class="flex items-center space-x-3">
-            <div class="bg-amber-600 p-2.5 rounded-xl shadow-lg shadow-amber-500/30">
-                <i class="fa-solid fa-hourglass-half text-xl text-white"></i>
-            </div>
-            <div>
-                <h1 class="font-bold text-lg text-white">Classroom Countdown Timer</h1>
-                <p class="text-xs text-amber-400 font-medium">Standalone Disruption-Free Timer</p>
-            </div>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+
+    <div class="absolute inset-0 bg-gradient-to-tr from-emerald-950/20 via-slate-950 to-indigo-950/20 pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-2xl w-full text-center space-y-8">
+        
+        <div>
+            <span class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider mb-2">
+                <i class="fa-solid fa-bell"></i> Disruption-Free Timer Tab
+            </span>
+            <h1 class="text-3xl font-extrabold text-white">Classroom Activity Timer</h1>
         </div>
 
-        <button onclick="toggleTheme()" class="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg">
-            <i class="fa-solid fa-circle-half-stroke text-lg"></i>
-        </button>
-    </header>
-
-    <main class="my-auto text-center space-y-8">
-        <div class="digital-font text-7xl sm:text-9xl font-extrabold text-amber-400 drop-shadow-2xl" id="timeDisplay">
-            10:00
+        <!-- Big Clock Display -->
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-10 md:p-14 shadow-2xl relative">
+            <div id="timerDisplay" class="text-7xl md:text-9xl font-black font-mono tracking-wider text-emerald-400">
+                05:00
+            </div>
+            <div id="statusLabel" class="text-xs uppercase font-extrabold text-slate-500 tracking-widest mt-4">Ready to Start</div>
         </div>
 
-        <!-- Presets Bar -->
-        <div class="flex flex-wrap justify-center gap-2 max-w-xl mx-auto text-xs font-bold">
-            <button onclick="setTimer(1)" class="bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl border border-slate-700">1 Min</button>
-            <button onclick="setTimer(5)" class="bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl border border-slate-700">5 Min</button>
-            <button onclick="setTimer(10)" class="bg-amber-600/40 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-xl">10 Min</button>
-            <button onclick="setTimer(15)" class="bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl border border-slate-700">15 Min</button>
-            <button onclick="setTimer(20)" class="bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl border border-slate-700">20 Min</button>
-            <button onclick="setTimer(30)" class="bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl border border-slate-700">30 Min</button>
+        <!-- Preset Minutes -->
+        <div class="flex justify-center gap-3">
+            <button onclick="setPreset(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition">1 Min</button>
+            <button onclick="setPreset(3)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition">3 Min</button>
+            <button onclick="setPreset(5)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition">5 Min</button>
+            <button onclick="setPreset(10)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition">10 Min</button>
+            <button onclick="setPreset(15)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition">15 Min</button>
         </div>
 
         <!-- Timer Controls -->
-        <div class="flex justify-center items-center space-x-4">
-            <button onclick="startTimer()" id="btnStart" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-xl shadow-emerald-600/30 flex items-center space-x-2">
-                <i class="fa-solid fa-play"></i><span>Start</span>
+        <div class="flex justify-center gap-4">
+            <button onclick="toggleTimer()" id="btnStartPause" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-8 py-4 rounded-2xl text-base transition shadow-xl shadow-emerald-600/30 flex items-center gap-2">
+                <i class="fa-solid fa-play"></i>
+                <span>Start Timer</span>
             </button>
-            <button onclick="pauseTimer()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-xl shadow-amber-600/30 flex items-center space-x-2">
-                <i class="fa-solid fa-pause"></i><span>Pause</span>
-            </button>
-            <button onclick="resetTimer()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-8 py-4 rounded-2xl text-base border border-slate-700 flex items-center space-x-2">
-                <i class="fa-solid fa-rotate-left"></i><span>Reset</span>
+            <button onclick="resetTimer()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-4 rounded-2xl text-base transition">
+                Reset
             </button>
         </div>
-    </main>
 
-    <footer class="text-center text-xs text-slate-500 border-t border-slate-800 pt-4">
-        Collierville High School Classroom Management System &bull; Standalone Tab View
-    </footer>
+    </div>
 
     <script>
-        let totalSeconds = 600;
+        let totalSeconds = 300;
+        let remainingSeconds = 300;
         let timerInterval = null;
-        let initialSeconds = 600;
+        let isRunning = false;
 
         function updateDisplay() {
-            const mins = Math.floor(totalSeconds / 60);
-            const secs = totalSeconds % 60;
-            document.getElementById("timeDisplay").textContent = 
-                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const m = Math.floor(remainingSeconds / 60);
+            const s = remainingSeconds % 60;
+            document.getElementById('timerDisplay').textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        function setTimer(minutes) {
+        function setPreset(mins) {
             pauseTimer();
-            totalSeconds = minutes * 60;
-            initialSeconds = totalSeconds;
+            totalSeconds = mins * 60;
+            remainingSeconds = totalSeconds;
             updateDisplay();
+            document.getElementById('statusLabel').textContent = `Set to ${mins} Minutes`;
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
         }
 
         function startTimer() {
-            if (timerInterval) return;
+            if (remainingSeconds <= 0) return;
+            isRunning = true;
+            document.getElementById('btnStartPause').innerHTML = '<i class="fa-solid fa-pause"></i><span>Pause</span>';
+            document.getElementById('statusLabel').textContent = 'Timer Running...';
+
             timerInterval = setInterval(() => {
-                if (totalSeconds > 0) {
-                    totalSeconds--;
-                    updateDisplay();
-                } else {
+                remainingSeconds--;
+                updateDisplay();
+
+                if (remainingSeconds <= 0) {
                     pauseTimer();
-                    playChimeSound();
+                    playChime();
+                    document.getElementById('statusLabel').textContent = 'Time Up!';
                 }
             }, 1000);
         }
 
         function pauseTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
+            isRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('btnStartPause').innerHTML = '<i class="fa-solid fa-play"></i><span>Start Timer</span>';
         }
 
         function resetTimer() {
             pauseTimer();
-            totalSeconds = initialSeconds;
+            remainingSeconds = totalSeconds;
             updateDisplay();
+            document.getElementById('statusLabel').textContent = 'Ready to Start';
         }
 
-        function playChimeSound() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 chime
-                gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 2.5);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 2.5);
-            } catch(e) {
-                console.log("Audio alert triggered");
-            }
+        function playChime() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 1.5);
         }
-
-        function toggleTheme() {
-            document.body.classList.toggle("invert");
-        }
-
-        updateDisplay();
     </script>
 </body>
 </html>
