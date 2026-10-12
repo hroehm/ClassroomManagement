@@ -3,554 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hall Pass Tracker & Department Monitor</title>
+    <title>Hall Pass Tracker - Classroom Command Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        
-        @keyframes pulse-red {
-            0%, 100% { background-color: #dc2626; border-color: #f87171; }
-            50% { background-color: #991b1b; border-color: #ef4444; }
-        }
-        .animate-overdue {
-            animation: pulse-red 1.5s infinite ease-in-out;
-        }
+        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        @keyframes pulse-overdue { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-overdue { animation: pulse-overdue 1s infinite; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Header Navigation -->
-    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <a href="index.html" class="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </a>
-                <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-blue-500/20">
-                    <i class="fa-solid fa-ticket text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-base text-white leading-tight">Hall Pass Tracker</h1>
-                    <p class="text-[11px] text-blue-400 font-medium">Math Department &bull; M365 Integration</p>
-                </div>
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-id-card-clip text-blue-500"></i> Hall Pass Tracker
+                </h1>
+                <p id="teacherHeaderSub" class="text-xs text-slate-400">Teacher 1 • Room 204 • Block 1</p>
             </div>
+        </div>
 
-            <!-- Block Selector & Actions -->
-            <div class="flex items-center space-x-3">
-                <select id="blockSelect" onchange="changeBlock(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500">
-                    <option value="Block 1">Block 1 (7:30 - 8:55)</option>
-                    <option value="Block 2">Block 2 (9:01 - 10:26)</option>
-                    <option value="Block 3">Block 3 (10:32 - 11:02)</option>
-                    <option value="Block 4">Block 4 (11:08 - 1:00)</option>
-                    <option value="Block 5">Block 5 (1:05 - 2:30)</option>
-                </select>
-
-                <!-- Download CSV Log Button -->
-                <button onclick="downloadDailyCSVLog()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
-                    <i class="fa-solid fa-file-csv text-sm"></i>
-                    <span class="hidden sm:inline">Download Daily CSV</span>
-                </button>
-
-                <!-- Active User Badge -->
-                <div id="userBadge" class="bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-semibold text-slate-300">
-                    Teacher 1
-                </div>
+        <div class="flex items-center gap-3">
+            <div id="syncBadge" class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span id="syncBadgeText">Webhook Config Needed</span>
             </div>
+            <button onclick="openWebhookModal()" class="px-3.5 py-1.5 bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/30 text-xs font-semibold rounded-xl transition flex items-center gap-2">
+                <i class="fa-solid fa-link text-indigo-400"></i> Webhook Config
+            </button>
+            <button onclick="downloadCSVLog()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Download CSV
+            </button>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
 
-        <!-- ===================================================== -->
-        <!-- 1. ACTIVE HALL PASSES SECTION (LOCATED AT THE VERY TOP) -->
-        <!-- ===================================================== -->
-        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-3">
-                    <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <h2 class="text-lg font-extrabold text-white tracking-wide">Active Hall Passes Out</h2>
-                    <span id="activeCountBadge" class="bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Out</span>
-                </div>
-                <div class="text-xs text-slate-400">
-                    Bathroom passes restricted to <span class="text-blue-400 font-semibold">Math Hallway</span>
+        <!-- 1. ACTIVE HALL PASSES SECTION (ALWAYS AT TOP) -->
+        <section class="glass-card rounded-2xl p-6 border border-slate-800 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-person-walking-arrow-right text-emerald-400"></i> Active Hall Passes
+                    <span id="activePassCount" class="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold">0 Out</span>
+                </h2>
+                <div class="text-xs text-slate-400 flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-700 inline-block"></span> Bathroom</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-purple-700 inline-block"></span> Guidance</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-700 inline-block"></span> Library</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-700 inline-block"></span> Office</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-teal-700 inline-block"></span> Nurse</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-600 animate-pulse inline-block"></span> 10+ Min Alert</span>
                 </div>
             </div>
 
-            <!-- Active Pass Cards Grid (FULL TILE BACKGROUND COLORS) -->
-            <div id="activePassesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Populated via JavaScript -->
-            </div>
-
-            <div id="noActivePassesMsg" class="text-center py-8 text-slate-500 text-sm">
-                <i class="fa-solid fa-circle-check text-2xl text-slate-600 mb-2 block"></i>
-                No active hall passes. All students are currently in class.
+            <!-- Active Passes Grid (Full Solid Colors) -->
+            <div id="activePassesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div id="noActivePassesMsg" class="col-span-full py-8 text-center text-slate-500 text-sm font-medium border border-dashed border-slate-800 rounded-xl">
+                    <i class="fa-solid fa-circle-check text-2xl text-slate-600 mb-2 block"></i>
+                    All students are currently in class. Select a student tile below to issue a hall pass.
+                </div>
             </div>
         </section>
 
-
-        <!-- ===================================================== -->
-        <!-- 2. CLASSROOM ROSTER GRID (STUDENT TILES INTERFACE)    -->
-        <!-- ===================================================== -->
-        <section class="space-y-4">
-            <div class="flex items-center justify-between">
+        <!-- 2. STUDENT TILES CLASSROOM ROSTER GRID -->
+        <section class="glass-card rounded-2xl p-6 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-users text-indigo-400"></i>
-                        <span id="rosterBlockHeading">Classroom Roster &bull; Block 1</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">Select a student tile below to issue a hall pass.</p>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-users text-indigo-400"></i> Classroom Roster
+                    </h2>
+                    <p class="text-xs text-slate-400">Click any student tile to open pass selection modal.</p>
                 </div>
-                
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400">Blackout Status:</span>
-                    <span id="blackoutBadge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                        Passes Allowed
-                    </span>
+                <div class="flex items-center gap-3">
+                    <input type="text" id="rosterSearch" oninput="renderRosterTiles()" placeholder="Search student..." class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <span class="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl font-medium">Max Out: 2</span>
                 </div>
             </div>
 
-            <!-- Student Tiles Grid -->
-            <div id="studentTilesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <!-- Populated via JavaScript -->
-            </div>
-        </section>
-
-
-        <!-- ===================================================== -->
-        <!-- 3. ADMIN DEPARTMENT HALLWAY MONITOR (FOR ADMIN ONLY)   -->
-        <!-- ===================================================== -->
-        <section id="adminMonitorSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 hidden">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Department Global Hallway Monitor (Administrator)</span>
-                </h3>
-                <button onclick="downloadDailyCSVLog()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-download"></i>
-                    <span>Download All Class Logs</span>
-                </button>
-            </div>
-
-            <div id="adminGlobalGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Populated via JS for Admin -->
+            <div id="rosterTilesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <!-- Tiles rendered dynamically -->
             </div>
         </section>
 
     </main>
 
-
-    <!-- ===================================================== -->
-    <!-- PASS CHECKOUT POP-UP MODAL                            -->
-    <!-- ===================================================== -->
-    <div id="passModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+    <!-- ISSUE PASS MODAL -->
+    <div id="issuePassModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-md w-full rounded-2xl p-6 shadow-2xl border border-slate-800">
+            <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-bold text-white" id="modalStudentName">Issue Pass</h3>
-                    <p class="text-xs text-slate-400" id="modalStudentSub">Select destination for pass checkout</p>
+                    <h3 id="modalStudentName" class="text-lg font-bold text-white">Student Name</h3>
+                    <p class="text-xs text-slate-400">Select pass destination</p>
                 </div>
-                <button onclick="closePassModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closePassModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- Reason / Destination Selection Buttons -->
-            <div class="space-y-2">
-                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pass Destination</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    
-                    <button onclick="selectPassType('Bathroom')" id="btnType_Bathroom" class="pass-type-btn bg-blue-600/20 border border-blue-500/40 text-blue-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-blue-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-restroom text-blue-400"></i>
-                        <span>Bathroom</span>
-                    </button>
-
-                    <button onclick="selectPassType('Guidance')" id="btnType_Guidance" class="pass-type-btn bg-purple-600/20 border border-purple-500/40 text-purple-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-purple-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-user-doctor text-purple-400"></i>
-                        <span>Guidance</span>
-                    </button>
-
-                    <button onclick="selectPassType('Library')" id="btnType_Library" class="pass-type-btn bg-amber-600/20 border border-amber-500/40 text-amber-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-amber-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-book text-amber-400"></i>
-                        <span>Library</span>
-                    </button>
-
-                    <button onclick="selectPassType('Office')" id="btnType_Office" class="pass-type-btn bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-emerald-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-building text-emerald-400"></i>
-                        <span>Office</span>
-                    </button>
-
-                    <button onclick="selectPassType('Nurse')" id="btnType_Nurse" class="pass-type-btn bg-teal-600/20 border border-teal-500/40 text-teal-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-teal-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-notes-medical text-teal-400"></i>
-                        <span>Nurse</span>
-                    </button>
-
-                    <button onclick="selectPassType('Errand')" id="btnType_Errand" class="pass-type-btn bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-cyan-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-folder-open text-cyan-400"></i>
-                        <span>Errand</span>
-                    </button>
-
-                    <button onclick="selectPassType('Other')" id="btnType_Other" class="col-span-2 sm:col-span-3 pass-type-btn bg-rose-600/20 border border-rose-500/40 text-rose-200 p-3 rounded-xl text-left font-semibold text-xs transition hover:bg-rose-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-pen-to-square text-rose-400"></i>
-                        <span>Other (Reason Required)</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Custom Reason Box (Shown if 'Other') -->
-            <div id="otherReasonBox" class="space-y-2 hidden">
-                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Specify Reason</label>
-                <input type="text" id="customReasonInput" placeholder="Enter reason for pass..." class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-xl p-3 focus:outline-none focus:border-rose-500">
-            </div>
-
-            <!-- PIN Override Box (Triggered if blackout / max capacity / limit hit) -->
-            <div id="pinOverrideBox" class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl space-y-2 hidden">
-                <div class="flex items-center gap-2 text-xs font-bold text-amber-300">
-                    <i class="fa-solid fa-lock"></i>
-                    <span id="overrideNoticeText">PIN Override Required</span>
-                </div>
-                <input type="password" id="overridePinInput" maxlength="4" placeholder="Enter 4-Digit Teacher PIN" class="w-full bg-slate-900 border border-slate-700 text-center text-lg tracking-[0.4em] text-white rounded-lg p-2 focus:outline-none focus:border-amber-500">
-            </div>
-
-            <div class="flex gap-3 pt-2">
-                <button onclick="closePassModal()" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs transition">
-                    Cancel
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="selectPassType('Bathroom')" class="p-4 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-restroom text-2xl text-blue-400"></i> Bathroom
                 </button>
-                <button onclick="confirmIssuePass()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-blue-600/30">
-                    Issue Pass Now
+                <button onclick="selectPassType('Guidance')" class="p-4 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-user-graduate text-2xl text-purple-400"></i> Guidance
                 </button>
+                <button onclick="selectPassType('Library')" class="p-4 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-book text-2xl text-amber-400"></i> Library
+                </button>
+                <button onclick="selectPassType('Office')" class="p-4 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-building text-2xl text-emerald-400"></i> Office
+                </button>
+                <button onclick="selectPassType('Nurse')" class="p-4 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 border border-teal-500/40 text-teal-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-notes-medical text-2xl text-teal-400"></i> Nurse
+                </button>
+                <button onclick="selectPassType('Errand')" class="p-4 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 font-semibold text-xs flex flex-col items-center gap-2 transition">
+                    <i class="fa-solid fa-envelope text-2xl text-cyan-400"></i> Errand
+                </button>
+            </div>
+
+            <button onclick="toggleCustomReason()" class="w-full py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 font-semibold text-xs transition mb-3">
+                <i class="fa-solid fa-pen-to-square"></i> Other / Custom Reason
+            </button>
+            <div id="customReasonContainer" class="hidden mb-4">
+                <input type="text" id="customReasonInput" placeholder="Type custom pass reason..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+                <button onclick="selectPassType('Other')" class="w-full mt-2 py-2 bg-rose-600 text-white font-semibold text-xs rounded-xl shadow">Confirm Custom Pass</button>
+            </div>
+
+            <div class="flex justify-end border-t border-slate-800 pt-3">
+                <button onclick="closePassModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
             </div>
         </div>
     </div>
 
+    <!-- WEBHOOK CONFIG MODAL -->
+    <div id="webhookModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-800">
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> Power Automate Webhook URL
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">
+                Paste your Power Automate HTTP POST URL below to automatically write daily pass logs directly into your SharePoint folder: <br>
+                <code class="text-indigo-300 font-mono text-[11px]">/sites/ColHS/Shared Documents/ClassroomManagement/HallPassLogs/</code>
+            </p>
+            <input type="url" id="webhookUrlInput" placeholder="Paste HTTP POST URL here..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-indigo-500 mb-4">
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                <button onclick="clearWebhookUrl()" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-semibold rounded-xl hover:bg-rose-600/30">Clear URL</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeWebhookModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
+                    <button onclick="saveWebhookUrl()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow">Save & Test Sync</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Rosters Data for Math Dept
-        const ROSTERS = {
-            'Block 1': ['Student A', 'Student B', 'Student C', 'Student D', 'Student E', 'Student F', 'Student G', 'Student H'],
-            'Block 2': ['Student I', 'Student J', 'Student K', 'Student L', 'Student M', 'Student N', 'Student O', 'Student P'],
-            'Block 3': ['Student Q', 'Student R', 'Student S', 'Student T', 'Student U', 'Student V'],
-            'Block 4': ['Student W', 'Student X', 'Student Y', 'Student Z', 'Student AA', 'Student BB'],
-            'Block 5': ['Planning Block']
+        // ===================================================================
+        // POWER AUTOMATE WEBHOOK URL (Saved in LocalStorage or Set Here)
+        // ===================================================================
+        let POWER_AUTOMATE_WEBHOOK_URL = localStorage.getItem('cms_webhook_url') || "";
+
+        const ROSTER = [
+            "Alexander, Marcus", "Bennett, Chloe", "Carter, Ethan", "Davis, Sophia",
+            "Edwards, Liam", "Foster, Ava", "Garcia, Noah", "Harris, Isabella",
+            "Jackson, Lucas", "King, Mia", "Lee, Oliver", "Martinez, Charlotte",
+            "Nelson, Elijah", "Owens, Amelia", "Patterson, James", "Quinn, Harper"
+        ];
+
+        let activePasses = JSON.parse(localStorage.getItem('cms_active_passes') || '[]');
+        let passLogs = JSON.parse(localStorage.getItem('cms_pass_logs') || '[]');
+        let selectedStudent = null;
+        let currentAuth = JSON.parse(sessionStorage.getItem('cms_auth') || '{"id":"t1","name":"Teacher 1","room":"204"}');
+
+        window.onload = function() {
+            document.getElementById('teacherHeaderSub').innerText = `${currentAuth.name} • Room ${currentAuth.room} • Block 1`;
+            updateSyncBadge();
+            renderActivePasses();
+            renderRosterTiles();
+            setInterval(renderActivePasses, 10000);
         };
 
-        let activeUser = null;
-        let currentBlock = 'Block 1';
-        let selectedStudent = null;
-        let selectedType = 'Bathroom';
-        let isOverrideNeeded = false;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadUserSession();
-            renderActivePasses();
-            renderStudentTiles();
-            startTimerTicks();
-        });
-
-        function loadUserSession() {
-            const saved = sessionStorage.getItem('cms_user');
-            if (saved) {
-                activeUser = JSON.parse(saved);
-                document.getElementById('userBadge').textContent = `${activeUser.name} (${activeUser.room})`;
-                if (activeUser.role === 'admin') {
-                    document.getElementById('adminMonitorSection').classList.remove('hidden');
-                }
+        function updateSyncBadge() {
+            const badge = document.getElementById('syncBadge');
+            const badgeText = document.getElementById('syncBadgeText');
+            if (POWER_AUTOMATE_WEBHOOK_URL && POWER_AUTOMATE_WEBHOOK_URL.startsWith('http')) {
+                badge.className = "px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 flex items-center gap-2";
+                badgeText.innerText = "SharePoint Sync Active";
             } else {
-                activeUser = { id: 't_math1', name: 'Teacher 1', room: 'Room 101', role: 'teacher', pin: '0000' };
-                document.getElementById('userBadge').textContent = 'Teacher 1 (Room 101)';
+                badge.className = "px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-semibold text-amber-400 flex items-center gap-2";
+                badgeText.innerText = "Webhook URL Needed";
             }
         }
 
-        function changeBlock(block) {
-            currentBlock = block;
-            document.getElementById('rosterBlockHeading').textContent = `Classroom Roster • ${block}`;
-            renderStudentTiles();
-        }
-
-        function getStoredPasses() {
-            return JSON.parse(localStorage.getItem('cms_active_passes') || '[]');
-        }
-
-        function saveStoredPasses(passes) {
-            localStorage.setItem('cms_active_passes', JSON.stringify(passes));
-        }
-
-        function getStoredLogs() {
-            return JSON.parse(localStorage.getItem('cms_completed_logs') || '[]');
-        }
-
-        function saveStoredLogs(logs) {
-            localStorage.setItem('cms_completed_logs', JSON.stringify(logs));
-        }
-
-        // =========================================================
-        // RENDER ACTIVE PASSES AT THE VERY TOP (SOLID FULL TILE COLORS)
-        // =========================================================
         function renderActivePasses() {
-            const passes = getStoredPasses();
             const grid = document.getElementById('activePassesGrid');
-            const countBadge = document.getElementById('activeCountBadge');
             const noMsg = document.getElementById('noActivePassesMsg');
+            document.getElementById('activePassCount').innerText = `${activePasses.length} Out`;
 
-            countBadge.textContent = `${passes.length} Out`;
-
-            if (passes.length === 0) {
+            if (activePasses.length === 0) {
                 grid.innerHTML = '';
-                noMsg.classList.remove('hidden');
+                grid.appendChild(noMsg);
                 return;
             }
 
-            noMsg.classList.add('hidden');
+            const bgColors = {
+                Bathroom: "bg-blue-700 border-blue-500 shadow-blue-900/50",
+                Guidance: "bg-purple-700 border-purple-500 shadow-purple-900/50",
+                Library: "bg-amber-700 border-amber-500 shadow-amber-900/50",
+                Office: "bg-emerald-700 border-emerald-500 shadow-emerald-900/50",
+                Nurse: "bg-teal-700 border-teal-500 shadow-teal-900/50",
+                Errand: "bg-cyan-700 border-cyan-500 shadow-cyan-900/50",
+                Other: "bg-rose-700 border-rose-500 shadow-rose-900/50"
+            };
 
-            grid.innerHTML = passes.map(p => {
-                const elapsedMin = Math.floor((Date.now() - new Date(p.startTime).getTime()) / 60000);
-                const elapsedSec = Math.floor(((Date.now() - new Date(p.startTime).getTime()) % 60000) / 1000);
-                const timeFormatted = `${elapsedMin}m ${elapsedSec < 10 ? '0' : ''}${elapsedSec}s`;
-
-                // Determine Tile Color Theme
-                let bgStyle = 'bg-blue-700 text-white';
-                if (p.type === 'Guidance') bgStyle = 'bg-purple-700 text-white';
-                else if (p.type === 'Library') bgStyle = 'bg-amber-600 text-white';
-                else if (p.type === 'Office') bgStyle = 'bg-emerald-700 text-white';
-                else if (p.type === 'Nurse') bgStyle = 'bg-teal-700 text-white';
-                else if (p.type === 'Errand') bgStyle = 'bg-cyan-700 text-white';
-                else if (p.type === 'Other') bgStyle = 'bg-rose-700 text-white';
-
-                // Overdue Check (>10 min for Bathroom)
-                let overdueClass = '';
-                if (p.type === 'Bathroom' && elapsedMin >= 10) {
-                    overdueClass = 'animate-overdue text-white shadow-2xl shadow-rose-600/50';
-                }
+            grid.innerHTML = activePasses.map(p => {
+                const elapsedMins = Math.floor((Date.now() - p.startTime) / 60000);
+                const isOverdue = (p.type === 'Bathroom' && elapsedMins >= 10);
+                const cardBg = isOverdue ? "bg-red-600 border-2 border-red-300 animate-pulse text-white shadow-xl shadow-red-500/50" : `${bgColors[p.type] || 'bg-slate-800'} text-white border shadow-md`;
 
                 return `
-                    <div class="rounded-2xl p-5 shadow-lg border border-white/20 transition-all flex flex-col justify-between ${bgStyle} ${overdueClass}">
+                    <div class="${cardBg} rounded-xl p-4 flex flex-col justify-between transition-all">
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] uppercase font-extrabold tracking-wider bg-black/30 px-2 py-0.5 rounded-md">
-                                    ${p.type} Pass
-                                </span>
-                                <span class="text-xs font-mono font-bold bg-black/30 px-2 py-0.5 rounded-md">
-                                    ${timeFormatted}
-                                </span>
+                                <span class="text-xs font-black uppercase tracking-wider bg-black/30 px-2 py-0.5 rounded">${p.type}</span>
+                                <span class="text-xs font-bold bg-black/30 px-2 py-0.5 rounded">${elapsedMins} min out</span>
                             </div>
-                            <h4 class="text-lg font-black tracking-tight">${p.student}</h4>
-                            <p class="text-xs font-medium opacity-90 mt-0.5">
-                                ${p.reason ? p.reason : (p.type === 'Bathroom' ? 'Math Hallway' : p.type)}
-                            </p>
-                            <p class="text-[10px] opacity-75 mt-2">${p.teacherName} &bull; ${p.block}</p>
+                            <div class="text-sm font-black tracking-wide">${p.student}</div>
+                            <div class="text-[11px] opacity-90 mt-1">${p.teacherName} • ${p.block || 'Block 1'}</div>
+                            ${p.reason ? `<div class="text-[11px] italic mt-1 opacity-90">Reason: ${p.reason}</div>` : ''}
                         </div>
-
-                        <div class="mt-4 pt-3 border-t border-white/20 flex items-center justify-between">
-                            ${p.isOverride ? '<span class="text-[10px] font-bold bg-amber-400 text-black px-2 py-0.5 rounded">OVERRIDE</span>' : '<span></span>'}
-                            <button onclick="checkInStudent('${p.id}')" class="bg-white text-slate-900 hover:bg-slate-100 font-bold px-4 py-2 rounded-xl text-xs transition shadow-md flex items-center gap-1.5">
-                                <i class="fa-solid fa-right-to-bracket"></i>
-                                <span>Return / Check In</span>
-                            </button>
-                        </div>
+                        <button onclick="checkInPass('${p.id}')" class="mt-4 w-full py-2 bg-black/40 hover:bg-black/60 text-white text-xs font-bold rounded-lg transition border border-white/20">
+                            <i class="fa-solid fa-right-to-bracket mr-1"></i> Check In Student
+                        </button>
                     </div>
                 `;
             }).join('');
         }
 
-        // =========================================================
-        // RENDER STUDENT TILES (OLD INDEX.HTML STYLE GRID)
-        // =========================================================
-        function renderStudentTiles() {
-            const grid = document.getElementById('studentTilesGrid');
-            const students = ROSTERS[currentBlock] || [];
-            const activePasses = getStoredPasses();
+        function renderRosterTiles() {
+            const grid = document.getElementById('rosterTilesGrid');
+            const filter = document.getElementById('rosterSearch').value.toLowerCase();
+            const outStudents = activePasses.map(p => p.student);
 
-            grid.innerHTML = students.map(student => {
-                const activePass = activePasses.find(p => p.student === student && p.teacherId === activeUser.id);
-                const isOut = !!activePass;
-
+            grid.innerHTML = ROSTER.filter(s => s.toLowerCase().includes(filter)).map(s => {
+                const isOut = outStudents.includes(s);
                 return `
-                    <button type="button" onclick="openPassModal('${student}')" class="p-4 rounded-2xl border text-left transition duration-200 flex flex-col justify-between h-28 relative overflow-hidden group ${
-                        isOut 
-                        ? 'bg-rose-950/40 border-rose-500/50 text-rose-200 shadow-lg shadow-rose-950/50' 
-                        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-blue-500/50 text-white shadow-md'
-                    }">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="w-2.5 h-2.5 rounded-full ${isOut ? 'bg-rose-500 animate-ping' : 'bg-emerald-400'}"></span>
-                            <span class="text-[10px] font-bold ${isOut ? 'text-rose-400' : 'text-slate-500'}">
-                                ${isOut ? 'OUT' : 'IN CLASS'}
-                            </span>
-                        </div>
-                        <div>
-                            <div class="font-bold text-sm tracking-tight group-hover:text-blue-300 transition">${student}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">${isOut ? activePass.type : 'Click to issue pass'}</div>
+                    <button onclick="${isOut ? '' : `openPassModal('${s}')`}" 
+                        class="p-4 rounded-xl border transition-all text-left flex flex-col justify-between h-24 ${isOut ? 'bg-slate-900/40 border-slate-800/60 text-slate-600 cursor-not-allowed opacity-50' : 'bg-slate-900 border-slate-800 hover:border-indigo-500 text-slate-200 hover:bg-slate-800/80 shadow-sm'}">
+                        <div class="text-xs font-bold leading-tight">${s}</div>
+                        <div class="text-[10px] font-semibold ${isOut ? 'text-amber-500' : 'text-indigo-400'}">
+                            ${isOut ? '<i class="fa-solid fa-person-walking"></i> Currently Out' : '<i class="fa-solid fa-plus"></i> Issue Pass'}
                         </div>
                     </button>
                 `;
             }).join('');
         }
 
-        // Modal Controls
         function openPassModal(student) {
             selectedStudent = student;
-            document.getElementById('modalStudentName').textContent = `Issue Pass for ${student}`;
-            document.getElementById('modalStudentSub').textContent = `Block: ${currentBlock} • Teacher: ${activeUser.name}`;
-            
-            selectPassType('Bathroom');
-            checkRestrictions();
-
-            document.getElementById('passModal').classList.remove('hidden');
+            document.getElementById('modalStudentName').innerText = student;
+            document.getElementById('customReasonContainer').classList.add('hidden');
+            document.getElementById('issuePassModal').classList.remove('hidden');
         }
 
         function closePassModal() {
-            document.getElementById('passModal').classList.add('hidden');
-            document.getElementById('otherReasonBox').classList.add('hidden');
-            document.getElementById('pinOverrideBox').classList.add('hidden');
-            isOverrideNeeded = false;
+            document.getElementById('issuePassModal').classList.add('hidden');
+        }
+
+        function toggleCustomReason() {
+            document.getElementById('customReasonContainer').classList.toggle('hidden');
         }
 
         function selectPassType(type) {
-            selectedType = type;
-            
-            // Highlight selected button
-            document.querySelectorAll('.pass-type-btn').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-blue-500', 'bg-slate-800');
-            });
-            const selectedBtn = document.getElementById(`btnType_${type}`);
-            if (selectedBtn) selectedBtn.classList.add('ring-2', 'ring-blue-500');
-
+            let reason = '';
             if (type === 'Other') {
-                document.getElementById('otherReasonBox').classList.remove('hidden');
-            } else {
-                document.getElementById('otherReasonBox').classList.add('hidden');
-            }
-
-            checkRestrictions();
-        }
-
-        function checkRestrictions() {
-            const activePasses = getStoredPasses();
-            const teacherActiveCount = activePasses.filter(p => p.teacherId === activeUser.id).length;
-            
-            let requiresOverride = false;
-            let reasonText = '';
-
-            if (teacherActiveCount >= 2) {
-                requiresOverride = true;
-                reasonText = 'Classroom Capacity Limit Reached (Max 2 Students Out)';
-            }
-
-            if (requiresOverride) {
-                isOverrideNeeded = true;
-                document.getElementById('pinOverrideBox').classList.remove('hidden');
-                document.getElementById('overrideNoticeText').textContent = reasonText;
-            } else {
-                isOverrideNeeded = false;
-                document.getElementById('pinOverrideBox').classList.add('hidden');
-            }
-        }
-
-        function confirmIssuePass() {
-            if (isOverrideNeeded) {
-                const pin = document.getElementById('overridePinInput').value.trim();
-                if (pin !== activeUser.pin && pin !== '9999') {
-                    alert('Incorrect 4-digit PIN override code.');
-                    return;
-                }
-            }
-
-            let customReason = '';
-            if (selectedType === 'Other') {
-                customReason = document.getElementById('customReasonInput').value.trim();
-                if (!customReason) {
-                    alert('Please enter a reason for the pass.');
-                    return;
-                }
+                reason = document.getElementById('customReasonInput').value.trim();
+                if (!reason) { alert('Please enter a custom reason.'); return; }
             }
 
             const newPass = {
-                id: 'pass_' + Date.now(),
-                teacherId: activeUser.id,
-                teacherName: activeUser.name,
+                id: 'PASS-' + Date.now(),
                 student: selectedStudent,
-                type: selectedType,
-                reason: customReason,
-                block: currentBlock,
-                isOverride: isOverrideNeeded,
-                startTime: new Date().toISOString()
+                type: type,
+                reason: reason,
+                teacherId: currentAuth.id,
+                teacherName: currentAuth.name,
+                block: 'Block 1',
+                startTime: Date.now()
             };
 
-            const passes = getStoredPasses();
-            passes.push(newPass);
-            saveStoredPasses(passes);
+            activePasses.push(newPass);
+            localStorage.setItem('cms_active_passes', JSON.stringify(activePasses));
 
-            closePassModal();
             renderActivePasses();
-            renderStudentTiles();
+            renderRosterTiles();
+            closePassModal();
+            syncToSharePoint();
         }
 
-        function checkInStudent(passId) {
-            let passes = getStoredPasses();
-            const passToCheckIn = passes.find(p => p.id === passId);
+        function checkInPass(passId) {
+            const index = activePasses.findIndex(p => p.id === passId);
+            if (index !== -1) {
+                const pass = activePasses[index];
+                pass.endTime = Date.now();
+                pass.duration = Math.round((pass.endTime - pass.startTime) / 60000);
+                passLogs.push(pass);
+                activePasses.splice(index, 1);
 
-            if (passToCheckIn) {
-                passes = passes.filter(p => p.id !== passId);
-                saveStoredPasses(passes);
-
-                const endTime = new Date().toISOString();
-                const durationMin = Math.round((new Date(endTime) - new Date(passToCheckIn.startTime)) / 60000);
-
-                const completedRecord = {
-                    ...passToCheckIn,
-                    endTime: endTime,
-                    durationMinutes: durationMin,
-                    status: 'Completed'
-                };
-
-                const logs = getStoredLogs();
-                logs.push(completedRecord);
-                saveStoredLogs(logs);
+                localStorage.setItem('cms_active_passes', JSON.stringify(activePasses));
+                localStorage.setItem('cms_pass_logs', JSON.stringify(passLogs));
 
                 renderActivePasses();
-                renderStudentTiles();
+                renderRosterTiles();
+                syncToSharePoint();
             }
         }
 
-        function startTimerTicks() {
-            setInterval(() => {
-                renderActivePasses();
-            }, 1000);
-        }
-
-        // =========================================================
-        // CSV LOG DOWNLOAD (YYYY-MM-DD_Pass_Log.csv)
-        // =========================================================
-        function downloadDailyCSVLog() {
-            const logs = getStoredLogs();
-            const active = getStoredPasses();
-            const allRecords = [...logs, ...active];
-
-            if (allRecords.length === 0) {
-                alert("No pass records logged for today yet.");
+        function syncToSharePoint() {
+            if (!POWER_AUTOMATE_WEBHOOK_URL || !POWER_AUTOMATE_WEBHOOK_URL.startsWith('http')) {
                 return;
             }
 
-            let csvContent = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,IsOverride,StartTime,EndTime,DurationMinutes\n";
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `${today}_Pass_Log.csv`;
 
+            let csv = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,StartTime,EndTime,DurationMinutes,Status\n";
+            const allRecords = [...passLogs, ...activePasses.map(p => ({ ...p, duration: 'Active', endTime: '' }))];
+            
             allRecords.forEach(r => {
-                const startTimeStr = new Date(r.startTime).toLocaleTimeString();
-                const endTimeStr = r.endTime ? new Date(r.endTime).toLocaleTimeString() : "Active Out";
-                const durStr = r.durationMinutes !== undefined ? r.durationMinutes : "Active";
-                
-                csvContent += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block}","${r.isOverride}","${startTimeStr}","${endTimeStr}","${durStr}"\n`;
+                csv += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block || 'Block 1'}","${new Date(r.startTime).toLocaleTimeString()}","${r.endTime ? new Date(r.endTime).toLocaleTimeString() : ''}","${r.duration || 'Active'}","${r.endTime ? 'Completed' : 'Active'}"\n`;
             });
 
-            const todayStr = new Date().toISOString().split('T')[0];
-            const fileName = `${todayStr}_Pass_Log.csv`;
+            fetch(POWER_AUTOMATE_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: fileName, fileContent: csv })
+            }).then(res => {
+                console.log('SharePoint Webhook Sync Executed successfully');
+            }).catch(err => {
+                console.error('SharePoint Webhook Sync Error:', err);
+            });
+        }
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function downloadCSVLog() {
+            const today = new Date().toISOString().split('T')[0];
+            let csv = "PassID,TeacherID,TeacherName,StudentName,PassType,PassReason,Block,StartTime,EndTime,DurationMinutes,Status\n";
+            const allRecords = [...passLogs, ...activePasses.map(p => ({ ...p, duration: 'Active', endTime: '' }))];
+            
+            allRecords.forEach(r => {
+                csv += `"${r.id}","${r.teacherId}","${r.teacherName}","${r.student}","${r.type}","${r.reason || ''}","${r.block || 'Block 1'}","${new Date(r.startTime).toLocaleTimeString()}","${r.endTime ? new Date(r.endTime).toLocaleTimeString() : ''}","${r.duration || 'Active'}","${r.endTime ? 'Completed' : 'Active'}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${today}_Pass_Log.csv`;
+            a.click();
+        }
+
+        function openWebhookModal() {
+            document.getElementById('webhookUrlInput').value = POWER_AUTOMATE_WEBHOOK_URL;
+            document.getElementById('webhookModal').classList.remove('hidden');
+        }
+
+        function closeWebhookModal() {
+            document.getElementById('webhookModal').classList.add('hidden');
+        }
+
+        function saveWebhookUrl() {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            POWER_AUTOMATE_WEBHOOK_URL = url;
+            localStorage.setItem('cms_webhook_url', url);
+            updateSyncBadge();
+            closeWebhookModal();
+            syncToSharePoint();
+            alert('Power Automate Webhook URL saved! Sync executed.');
+        }
+
+        function clearWebhookUrl() {
+            POWER_AUTOMATE_WEBHOOK_URL = "";
+            localStorage.removeItem('cms_webhook_url');
+            document.getElementById('webhookUrlInput').value = "";
+            updateSyncBadge();
+            closeWebhookModal();
         }
     </script>
 </body>
