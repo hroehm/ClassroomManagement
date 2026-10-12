@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Command Center - Collierville High School</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://chnis.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-card:hover { border-color: rgba(99, 102, 241, 0.4); transform: translateY(-2px); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-slate-100 font-sans antialiased pb-12">
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight">Classroom Command Hub</h1>
+                    <p class="text-xs text-indigo-400 font-medium">Math Department Pilot &bull; Collierville HS</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3" id="userHeaderBar">
+                <div id="userInfoChip" class="flex items-center space-x-3 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-lg">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 font-bold text-xs" id="userInitials">M1</div>
+                    <div class="text-left">
+                        <div class="text-xs font-semibold text-white" id="userNameDisplay">Teacher 1</div>
+                        <div class="text-[10px] text-slate-400" id="userRoleDisplay">Math Dept &bull; Room 101</div>
+                    </div>
+                </div>
+
+                <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button onclick="switchUserPrompt()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-user-gear mr-1.5"></i> Switch Login
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+        <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/50 pb-4 mb-4">
+                <div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Active Session
+                    </span>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-indigo-400"></i> Bell Schedule & Master Control
+                    </h2>
+                </div>
+
+                <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/80">
+                    <button onclick="setScheduleMode('standard')" id="btnModeStandard" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow">Standard Day</button>
+                    <button onclick="setScheduleMode('clubA')" id="btnModeClubA" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">Club Day A</button>
+                    <button onclick="setScheduleMode('clubB')" id="btnModeClubB" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">Club Day B</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center" id="bellScheduleGrid">
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <div class="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Block 1</div>
+                    <div class="text-sm font-semibold text-white mt-0.5">7:30 - 8:55</div>
+                    <div class="text-[10px] text-slate-400 mt-1" id="b1RosterName">Algebra I</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <div class="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Block 2</div>
+                    <div class="text-sm font-semibold text-white mt-0.5">9:01 - 10:26</div>
+                    <div class="text-[10px] text-slate-400 mt-1" id="b2RosterName">Geometry</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3" id="block3Card">
+                    <div class="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Block 3</div>
+                    <div class="text-sm font-semibold text-white mt-0.5">10:32 - 11:02</div>
+                    <div class="text-[10px] text-slate-400 mt-1" id="b3RosterName">Advisory</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <div class="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Block 4 (Lunch)</div>
+                    <div class="text-sm font-semibold text-white mt-0.5">11:08 - 1:00</div>
+                    <div class="text-[10px] text-indigo-300 font-medium mt-1" id="userLunchBadge">Lunch B</div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 col-span-2 sm:col-span-1">
+                    <div class="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Block 5</div>
+                    <div class="text-sm font-semibold text-white mt-0.5">1:05 - 2:30</div>
+                    <div class="text-[10px] text-slate-400 mt-1" id="b5RosterName">Algebra II</div>
+                </div>
+            </div>
+
+            <div id="clubNoticeBanner" class="hidden mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-200 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-users-rectangle text-amber-400 text-sm"></i>
+                    <span><strong>Club Day Active:</strong> Block 3 suspended. Block 2 holds non-club students. Club sponsors may manage club rosters across classrooms.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Hall Pass Tracker</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">Monitor active passes, enforce 15-min blackout rules, color-code passes, and log directly to SharePoint.</p>
+                </div>
+                <a href="pass_tracker.html" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-2">
+                    <span>Open Pass Tracker</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Group Maker</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">Create auto/manual team cards, custom banner colors, Do Not Pair rules, and assign student jobs.</p>
+                </div>
+                <a href="group_maker.html" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center space-x-2">
+                    <span>Open Group Maker</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Countdown Timer</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">Fullscreen timer that runs in a standalone tab without interfering with active pass updates.</p>
+                </div>
+                <a href="countdown_timer.html" target="_blank" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center space-x-2">
+                    <span>Launch Timer (New Tab)</span>
+                    <i class="fa-solid fa-up-right-from-square text-xs"></i>
+                </a>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-dharmachakra"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Job Spinner</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">Dual concentric wheels pairing student rosters with classroom duties and custom icons.</p>
+                </div>
+                <a href="classroom_spinner.html" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
+                    <span>Open Job Spinner</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <div id="userModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-lock text-indigo-400"></i> Sign In</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3">
+                <label class="block text-xs font-semibold text-slate-300">Select User Profile:</label>
+                <select id="userSelect" class="w-full bg-slate-950 border border-slate-700 text-white text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="t1">Teacher 1 - Room 101 (Math Dept)</option>
+                    <option value="t2">Teacher 2 - Room 102 (Math Dept)</option>
+                    <option value="t3">Teacher 3 - Room 103 (Math Dept)</option>
+                    <option value="t4">Teacher 4 - Room 104 (Math Dept)</option>
+                    <option value="t5">Teacher 5 - Room 105 (Math Dept)</option>
+                    <option value="admin">Administrator - Main Office</option>
+                </select>
+                <label class="block text-xs font-semibold text-slate-300">Enter 4-Digit Access PIN:</label>
+                <input type="password" id="pinInput" placeholder="Teacher: 0000 | Admin: 9999" maxlength="4" class="w-full bg-slate-950 border border-slate-700 text-white text-center text-lg font-mono rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none tracking-widest">
+                <div id="pinError" class="text-xs text-rose-400 hidden">Invalid PIN. Default Teacher PIN is 0000; Admin PIN is 9999.</div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="closeUserModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white">Cancel</button>
+                <button onclick="verifyAndSignIn()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30">Sign In</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-sliders text-indigo-400"></i> Settings & Admin Control</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <div class="font-bold text-indigo-400 uppercase tracking-wider text-[10px]">Teacher Preferences</div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-300">Block 4 Designated Lunch:</span>
+                        <select id="settingLunchSelect" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs">
+                            <option value="Lunch A">Lunch A (11:08 - 11:33)</option>
+                            <option value="Lunch B">Lunch B (11:37 - 12:02)</option>
+                            <option value="Lunch C">Lunch C (12:06 - 12:31)</option>
+                            <option value="Lunch D">Lunch D (12:35 - 1:00)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-slate-300 block">Update Personal PIN (4 digits):</label>
+                        <div class="flex space-x-2">
+                            <input type="password" id="newPinInput" placeholder="New PIN" maxlength="4" class="bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs font-mono w-32 text-center">
+                            <button onclick="saveNewPin()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-semibold">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminControlPanel" class="space-y-3 bg-amber-500/10 p-4 rounded-xl border border-amber-500/30">
+                    <div class="font-bold text-amber-400 uppercase tracking-wider text-[10px]">Admin Reset Controls</div>
+                    <div class="space-y-2">
+                        <label class="text-slate-300 block">Reset Teacher PIN to Default (0000):</label>
+                        <div class="flex space-x-2">
+                            <select id="resetTeacherSelect" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-2 text-xs flex-1">
+                                <option value="t1">Teacher 1</option>
+                                <option value="t2">Teacher 2</option>
+                                <option value="t3">Teacher 3</option>
+                                <option value="t4">Teacher 4</option>
+                                <option value="t5">Teacher 5</option>
+                            </select>
+                            <button onclick="adminResetTeacherPin()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-semibold">Reset Teacher PIN</button>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-amber-500/20 flex items-center justify-between">
+                        <span class="text-slate-300">Reset Admin PIN to 9999:</span>
+                        <button onclick="adminResetSelfPin()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg font-semibold">Reset Admin PIN</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="saveSettingsAndClose()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-xl">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHAREPOINT_SITE_URL = "https://colliervilleschools.sharepoint.com/sites/ColHS";
+        const LOG_FOLDER_PATH = "/sites/ColHS/Shared Documents/ClassroomManagement/HallPassLogs";
+
+        const DEFAULT_USERS = {
+            t1: { id: "t1", name: "Teacher 1", room: "Room 101", role: "teacher", pin: "0000", lunch: "Lunch B", rosters: { "Block 1": "Algebra I", "Block 2": "Geometry", "Block 3": "Advisory", "Block 4": "Honors Math", "Block 5": "Algebra II" } },
+            t2: { id: "t2", name: "Teacher 2", room: "Room 102", role: "teacher", pin: "0000", lunch: "Lunch A", rosters: { "Block 1": "Geometry", "Block 2": "Algebra II", "Block 3": "Advisory", "Block 4": "Pre-Calculus", "Block 5": "Statistics" } },
+            t3: { id: "t3", name: "Teacher 3", room: "Room 103", role: "teacher", pin: "0000", lunch: "Lunch C", rosters: { "Block 1": "Calculus", "Block 2": "Algebra I", "Block 3": "Advisory", "Block 4": "Geometry", "Block 5": "Planning" } },
+            t4: { id: "t4", name: "Teacher 4", room: "Room 104", role: "teacher", pin: "0000", lunch: "Lunch B", rosters: { "Block 1": "Pre-Calculus", "Block 2": "Calculus AB", "Block 3": "Advisory", "Block 4": "Algebra II", "Block 5": "Honors Geometry" } },
+            t5: { id: "t5", name: "Teacher 5", room: "Room 105", role: "teacher", pin: "0000", lunch: "Lunch D", rosters: { "Block 1": "Algebra II", "Block 2": "Statistics", "Block 3": "Advisory", "Block 4": "Calculus BC", "Block 5": "Algebra I" } },
+            admin: { id: "admin", name: "Administrator", room: "Main Office", role: "admin", pin: "9999", lunch: "Lunch B", rosters: { "Block 1": "Dept Monitor", "Block 2": "Dept Monitor", "Block 3": "Dept Monitor", "Block 4": "Dept Monitor", "Block 5": "Dept Monitor" } }
+        };
+
+        let currentUser = null;
+
+        function initApp() {
+            const saved = sessionStorage.getItem("cms_active_user");
+            currentUser = saved ? JSON.parse(saved) : DEFAULT_USERS.t1;
+            sessionStorage.setItem("cms_active_user", JSON.stringify(currentUser));
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById("userNameDisplay").textContent = currentUser.name;
+            document.getElementById("userRoleDisplay").textContent = `Math Dept • ${currentUser.room}`;
+            document.getElementById("userInitials").textContent = currentUser.id.toUpperCase();
+            document.getElementById("userLunchBadge").textContent = `${currentUser.lunch || 'Lunch B'}`;
+            if (currentUser.rosters) {
+                document.getElementById("b1RosterName").textContent = currentUser.rosters["Block 1"] || "Class 1";
+                document.getElementById("b2RosterName").textContent = currentUser.rosters["Block 2"] || "Class 2";
+                document.getElementById("b3RosterName").textContent = currentUser.rosters["Block 3"] || "Advisory";
+                document.getElementById("b5RosterName").textContent = currentUser.rosters["Block 5"] || "Class 5";
+            }
+            if (currentUser.role === "admin") {
+                document.getElementById("adminControlPanel").classList.remove("hidden");
+            } else {
+                document.getElementById("adminControlPanel").classList.add("hidden");
+            }
+        }
+
+        function switchUserPrompt() {
+            document.getElementById("pinInput").value = "";
+            document.getElementById("pinError").classList.add("hidden");
+            document.getElementById("userModal").classList.remove("hidden");
+        }
+
+        function closeUserModal() { document.getElementById("userModal").classList.add("hidden"); }
+
+        function verifyAndSignIn() {
+            const key = document.getElementById("userSelect").value;
+            const pin = document.getElementById("pinInput").value;
+            const target = DEFAULT_USERS[key];
+            if (pin === target.pin || (target.role !== 'admin' && pin === '0000') || (target.role === 'admin' && pin === '9999')) {
+                currentUser = target;
+                sessionStorage.setItem("cms_active_user", JSON.stringify(currentUser));
+                updateUI();
+                closeUserModal();
+            } else {
+                document.getElementById("pinError").classList.remove("hidden");
+            }
+        }
+
+        function setScheduleMode(mode) {
+            document.getElementById("btnModeStandard").className = mode === 'standard' ? "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow" : "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+            document.getElementById("btnModeClubA").className = mode === 'clubA' ? "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow" : "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+            document.getElementById("btnModeClubB").className = mode === 'clubB' ? "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow" : "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+            const banner = document.getElementById("clubNoticeBanner");
+            const b3 = document.getElementById("block3Card");
+            if (mode !== 'standard') {
+                banner.classList.remove("hidden");
+                b3.classList.add("opacity-40", "line-through");
+            } else {
+                banner.classList.add("hidden");
+                b3.classList.remove("opacity-40", "line-through");
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById("settingLunchSelect").value = currentUser.lunch || "Lunch B";
+            document.getElementById("settingsModal").classList.remove("hidden");
+        }
+
+        function closeSettingsModal() { document.getElementById("settingsModal").classList.add("hidden"); }
+
+        function saveSettingsAndClose() {
+            currentUser.lunch = document.getElementById("settingLunchSelect").value;
+            sessionStorage.setItem("cms_active_user", JSON.stringify(currentUser));
+            updateUI();
+            closeSettingsModal();
+        }
+
+        function saveNewPin() {
+            const p = document.getElementById("newPinInput").value;
+            if (p.length === 4 && /^\d+$/.test(p)) {
+                currentUser.pin = p;
+                DEFAULT_USERS[currentUser.id].pin = p;
+                sessionStorage.setItem("cms_active_user", JSON.stringify(currentUser));
+                alert("PIN updated successfully.");
+                document.getElementById("newPinInput").value = "";
+            } else { alert("Enter 4 digits."); }
+        }
+
+        function adminResetTeacherPin() {
+            const k = document.getElementById("resetTeacherSelect").value;
+            DEFAULT_USERS[k].pin = "0000";
+            alert(`PIN for ${DEFAULT_USERS[k].name} reset to 0000.`);
+        }
+
+        function adminResetSelfPin() {
+            DEFAULT_USERS.admin.pin = "9999";
+            if (currentUser.role === 'admin') currentUser.pin = "9999";
+            sessionStorage.setItem("cms_active_user", JSON.stringify(currentUser));
+            alert("Admin PIN reset to 9999.");
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
